@@ -1,0 +1,6 @@
+[workspace]
+members=[
+    "hmb-auth",
+    "hmb-graph",
+]
+resolver="2"
