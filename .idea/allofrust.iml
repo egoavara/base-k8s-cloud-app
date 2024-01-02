@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/IMSv2-CMDB/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/hmb-graph/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/hmb-auth/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/worker-debezium/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

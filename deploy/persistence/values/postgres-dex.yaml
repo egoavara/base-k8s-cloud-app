@@ -1,0 +1,72 @@
+architecture: standalone
+## Authentication parameters
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/postgresql#setting-the-root-password-on-first-run
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/postgresql#creating-a-database-on-first-run
+## ref: https://github.com/bitnami/containers/tree/main/bitnami/postgresql#creating-a-database-user-on-first-run
+##
+auth:
+  ## @param auth.enablePostgresUser Assign a password to the "postgres" admin user. Otherwise, remote access will be blocked for this user
+  enablePostgresUser: false
+  existingSecret: "secret-postgres-dex"
+  database: "dex"
+
+nameOverride: postgres-dex
+
+ldap:
+  enabled: true
+  server: "openldap"
+  port: "389"
+  basedn: "dc=egoavara,dc=net"
+  binddn: "cn=admin,dc=egoavara,dc=net"
+  bindpw: "auto"
+  tls:
+    enabled: false
+
+
+containerPorts:
+  postgresql: 5432
+
+primary:
+  initdb:
+    scripts:
+      users.sql: |
+        create user "pg-dex" with superuser;
+  affinity: {}
+  name: primary
+  nodeAffinityPreset:
+    key: ""
+    type: ""
+    values: []
+  nodeSelector: {}
+  resources:
+    limits: {}
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  service:
+    annotations: {}
+    clusterIP: ""
+    externalTrafficPolicy: Cluster
+    extraPorts: []
+    headless:
+      annotations: {}
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    nodePorts:
+      postgresql: ""
+    ports:
+      postgresql: 5432
+    sessionAffinity: None
+    sessionAffinityConfig: {}
+    type: ClusterIP
+  sidecars: []
+  tolerations: []
+  topologySpreadConstraints: []
+  updateStrategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  extendedConfiguration: |
+    wal_level = logical
+
+metrics:
+  enabled: true

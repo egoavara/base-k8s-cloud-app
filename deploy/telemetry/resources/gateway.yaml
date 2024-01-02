@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: gateway
+  namespace: telemetry
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: credential-telemetry
+      hosts:
+        - "jaeger.egoavara.net"
+        - "grafana.egoavara.net"
+        - "kiali.egoavara.net"
+        - "prometheus.egoavara.net"

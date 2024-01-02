@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: auth
+
+resources:
+  - resources/namespace.yaml
+
+secretGenerator:
+  - name: openfga-datastore
+    envs:
+      - "./secrets/openfga-datastore.env"
+
+helmCharts:
+  # openfga : Authorization 관리 프로그램
+  - releaseName: openfga
+    repo: https://openfga.github.io/helm-charts
+    name: openfga
+    version: 0.1.31
+    valuesFile: ./values/openfga.yaml

@@ -1,0 +1,64 @@
+deployments:
+  webserver:
+    enabled: true
+  executor:
+    enabled: true
+  indexer:
+    enabled: true
+  scheduler:
+    enabled: true
+  worker:
+    enabled: true
+  standalone:
+    enabled: false
+
+minio:
+  enabled: true
+  # istio sidecar quit command
+  makeUserJob:
+    exitCommand: |
+      curl -X POST http://localhost:15000/quitquitquit
+  makeBucketJob:
+    # istio sidecar quit command
+    exitCommand: | 
+      curl -X POST http://localhost:15000/quitquitquit
+
+postgresql:
+  enabled: true
+  auth:
+    database: kestra
+    username: kestra-root
+    password: c6ca89e5-981a-41bb-b65d-787802051042
+
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+configuration:
+  kestra:
+    queue:
+      type: kafka
+    repository:
+      type: postgres
+
+secrets:
+  kestra:
+    kafka:
+      client:
+        properties:
+          bootstrap.servers: "kafka.persistence.svc.cluster.local:9092"
+  datasources:
+    postgres:
+      url: jdbc:postgresql://localhost:5432/kestra
+      driverClassName: org.postgresql.Driver
+      username: kestra
+      password: k3str4
+
+#ingress:
+#  enabled: true
+#  className: nginx
+#  hosts:
+#    - host: kestra.egoavara.net
+#      paths:
+#        - path: /
+#          pathType: ImplementationSpecific

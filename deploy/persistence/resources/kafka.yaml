@@ -1,0 +1,160 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+spec:
+  dataVolumeCapacity: 10G
+  image:
+    application: docker.io/confluentinc/cp-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  replicas: 3
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Kafka
+metadata:
+  name: kafka
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dataVolumeCapacity: 100Gi
+  dependencies:
+    kRaftController:
+      clusterRef:
+        name: kraftcontroller
+  metricReporter:
+    enabled: true
+#  listeners:
+#    external:
+#      externalAccess:
+#        type: nodePort
+#        nodePort:
+#          host: kafka.egoavara.net
+#          nodePortOffset: 40000
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: KsqlDB
+metadata:
+  name: ksqldb
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-ksqldb-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dataVolumeCapacity: 10Gi
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: ControlCenter
+metadata:
+  name: controlcenter
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-enterprise-control-center:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  configOverrides:
+    server:
+      - confluent.controlcenter.command.topic.replication=1
+      - confluent.controlcenter.replication.factor=1
+      - confluent.metrics.reporter.topic.replicas=1
+      - confluent.metrics.topic.replication=1
+      - confluent.monitoring.interceptor.topic.replication=1
+      - confluent.controlcenter.internal.topics.replication=1
+  dataVolumeCapacity: 10Gi
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.persistence.svc.cluster.local:8081
+    ksqldb:
+    - name: ksqldb
+      url: http://ksqldb.persistence.svc.cluster.local:8088
+    connect:
+    - name: connect
+      url: http://connect.persistence.svc.cluster.local:8083
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: SchemaRegistry
+metadata:
+  name: schemaregistry
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-schema-registry:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaRestProxy
+metadata:
+  name: kafkarestproxy
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-kafka-rest:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.persistence.svc.cluster.local:8081
+
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Connect
+metadata:
+  name: connect
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-server-connect:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  configOverrides:
+    server:
+      - config.storage.replication.factor=1
+      - offset.storage.replication.factor=1
+      - status.storage.replication.factor=1
+  build:
+    type: onDemand
+    onDemand:
+      plugins:
+        locationType: confluentHub
+        confluentHub:
+          - name: kafka-connect-http
+            owner: confluentinc
+            version: 1.7.4
+          - name: kafka-connect-elasticsearch
+            owner: confluentinc
+            version: 14.0.12
+          - name: debezium-connector-postgresql
+            owner: debezium
+            version: 2.2.1
+          - name: redis-kafka-connect
+            owner: redis
+            version: 0.9.0
+          - name: kafka-connect-neo4j
+            owner: neo4j
+            version: 5.0.3
+  dependencies:
+    kafka:
+      bootstrapEndpoint: kafka:9071
+  mountedSecrets:
+    - secretRef: secret-postgres # mount to /mnt/secrets/secret-postgres
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Connector
+metadata:
+  name: debezium-connector-postgresql
+spec:
+  class: io.debezium.connector.postgresql.PostgresConnector
+  tasksMax: 1
+  config:
+    database.hostname: "postgres-postgresql.persistence.svc.cluster.local"
+    database.port: "5432"
+    database.user: "postgres"
+    database.password: "${file:/mnt/secrets/secret-postgres:password}"
+    database.dbname: "postgres"
+    database.server.name: "postgres.persistence"
+    plugin.name: "pgoutput"
+    snapshot.mode: "initial"
+    
+    key.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    key.converter.schemas.enable: "false"
+    value.converter.schemas.enable: "false"

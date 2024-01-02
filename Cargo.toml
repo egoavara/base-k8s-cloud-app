@@ -1,6 +1,24 @@
 [workspace]
-members=[
-    "hmb-auth",
-    "hmb-graph",
+members = [
+    #    "app/example1",
+    #    "app/example2",
 ]
-resolver="2"
+resolver = "2"
+
+[workspace.dependencies]
+
+kafka = { version = "0.10.0" }
+
+serde = { version = "1", features = [] }
+serde_json = { version = "1", features = [] }
+
+regex = { version = "1", features = [] }
+
+openssl = { version = "0.10.59" }
+openssl-sys = { version = "0.9.95" }
+
+tracing = { version = "0.1" }
+tracing-appender = { version = "0.2" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+tempfile = { version = "3" }

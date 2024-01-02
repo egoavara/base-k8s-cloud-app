@@ -1,0 +1,46 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# kube-prometheus-stack 에서 kube-system에 배포해야 하는 서비스가 있어서 강제 오버라이드시 문제가 생김 주의
+# namespace: telemetry
+
+resources:
+  - resources/namespace.yaml
+  - resources/gateway.yaml
+  - resources/grafana.yaml
+  - resources/jaeger.yaml
+  - resources/kiali.yaml
+  - resources/prometheus.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: istio-services-grafana-dashboards
+    namespace: telemetry
+    files:
+      - ./configs/istio-services-grafana-dashboards/istio-extension-dashboard.json
+      - ./configs/istio-services-grafana-dashboards/istio-mesh-dashboard.json
+      - ./configs/istio-services-grafana-dashboards/istio-service-dashboard.json
+      - ./configs/istio-services-grafana-dashboards/istio-workload-dashboard.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+  - name: istio-grafana-dashboards
+    namespace: telemetry
+    files:
+      - ./configs/istio-grafana-dashboards/istio-performance-dashboard.json
+      - ./configs/istio-grafana-dashboards/pilot-dashboard.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+
+helmCharts:
+  # prometheus and grafana
+  - releaseName: prometheus-grafana
+    repo: https://prometheus-community.github.io/helm-charts
+    name: kube-prometheus-stack
+    version: 55.5.1
+    namespace: telemetry
+    valuesFile: ./values/prometheus-grafana.yaml
+    includeCRDs: false

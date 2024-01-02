@@ -1,3 +1,10 @@
+.idea
+
 /target
 
+build.yaml
+charts
+
 node_modules
+*.env
+!*.placeholder.env

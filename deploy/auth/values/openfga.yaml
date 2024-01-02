@@ -1,0 +1,60 @@
+datastore:
+  engine: postgres
+  uriSecret: "openfga-datastore"
+
+postgresql:
+  auth:
+    postgresPassword: password
+    database: openfga
+
+authn:
+  method:
+  preshared:
+    keys: []
+  oidc:
+    audience:
+    issuer:
+
+playground:
+  enabled: true
+  port: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+  tls:
+    - hosts:
+        - openfga.egoavara.net
+      secretName: openfga-tls
+  hosts:
+    - host: openfga.egoavara.net
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# @param sidecars Add additional sidecar containers to the pods
+# Example:
+# sidecars:
+#   - name: your-image-name
+#     image: your-image
+#     imagePullPolicy: Always
+#     ports:
+#       - name: portname
+#         containerPort: 1234
+sidecars: []

@@ -1,0 +1,72 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: persistence
+
+resources:
+  - resources/namespace.yaml
+  - resources/ldap.yaml
+  - resources/kafka.yaml
+#  - resources/elasticsearch-kestra.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - name: secret-ldap
+    envs:
+      - "./secrets/secret-ldap.env"
+  - name: secret-postgres-dex
+    envs:
+      - "./secrets/secret-postgres-dex.env"
+  - name: secret-postgres-kestra
+    envs:
+      - "./secrets/secret-postgres-kestra.env"
+  - name: secret-postgres-openfga
+    envs:
+      - "./secrets/secret-postgres-openfga.env"
+  - name: secret-postgres-svc
+    envs:
+      - "./secrets/secret-postgres-svc.env"
+#  - name: secret-neo4j
+#    envs:
+#      - "./secrets/secret-neo4j.env"
+
+helmCharts:
+  # postgres for dex
+  - releaseName: postgres-dex
+    repo: https://charts.bitnami.com/bitnami
+    name: postgresql
+    version: 13.2.3
+    valuesFile: ./values/postgres-dex.yaml
+  # postgres for kestra
+  - releaseName: postgres-kestra
+    repo: https://charts.bitnami.com/bitnami
+    name: postgresql
+    version: 13.2.3
+    valuesFile: ./values/postgres-kestra.yaml
+  # postgres for openfga
+  - releaseName: postgres-openfga
+    repo: https://charts.bitnami.com/bitnami
+    name: postgresql
+    version: 13.2.3
+    valuesFile: ./values/postgres-openfga.yaml
+  # postgres for svc
+  - releaseName: postgres-svc
+    repo: https://charts.bitnami.com/bitnami
+    name: postgresql
+    version: 13.2.3
+    valuesFile: ./values/postgres-svc.yaml
+
+  # redis (key-value store)
+#  - releaseName: redis
+#    repo: https://charts.bitnami.com/bitnami
+#    name: redis
+#    version: 18.3.0
+#    valuesFile: ./values/redis.yaml
+  # neo4j (graph database)
+#  - releaseName: neo4j
+#    repo: https://helm.neo4j.com/neo4j
+#    name: neo4j
+#    version: 5.14.0
+#    valuesFile: ./values/neo4j.yaml

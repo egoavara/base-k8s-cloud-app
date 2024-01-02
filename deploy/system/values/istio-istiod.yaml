@@ -1,0 +1,10 @@
+global:
+  proxy:
+    tracer: "zipkin"
+  tracer:
+    zipkin:
+      address: "jaeger-collector.telemetry.svc:9411"
+meshConfig:
+  defaultConfig:
+    tracing:
+      sampling: 100

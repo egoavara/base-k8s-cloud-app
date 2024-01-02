@@ -1,0 +1,90 @@
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: kiali
+  namespace: telemetry
+spec:
+  istio_namespace: istio-system
+  auth:
+    strategy: anonymous
+  api:
+    namespaces:
+      exclude:
+        - "^.+-manager$"
+        - "^.+-operator$"
+        - "^.+-system$"
+        - "^kube-.+$"
+        - "^telemetry$"
+      include: []
+  external_services:
+    prometheus:
+      url: "http://prometheus-operated.telemetry.svc:9090"
+    istio:
+      component_status:
+        components:
+          - app_label: "istiod"
+            is_core: true
+            is_proxy: false
+          - app_label: "ingressgateway"
+            is_core: true
+            is_proxy: true
+            # default: namespace is undefined
+            namespace: istio-system
+          - app_label: "egressgateway"
+            is_core: false
+            is_proxy: true
+            # default: namespace is undefined
+            namespace: istio-system
+        enabled: true
+    tracing:
+      enabled: true
+      grpc_port: 16685
+      is_core: false
+      namespace_selector: true
+      provider: "jaeger"
+      query_timeout: 5
+      url: "https://jaeger.egoavara.net"
+      in_cluster_url: "http://jaeger-query.telemetry.svc:16685"
+      use_grpc: true
+      whitelist_istio_system: [ "ingressgateway" ]
+    grafana:
+      enabled: true
+      is_core: false
+      namespace_selector: true
+      url: "https://grafana.egoavara.net"
+      in_cluster_url: "http://prometheus-grafana.telemetry.svc"
+      whitelist_istio_system: [ "ingressgateway" ]
+      auth:
+        insecure_skip_verify: true
+        type: basic
+        username: "admin"
+        password: "secret:prometheus-grafana:admin-password"
+#      dashboards:
+#        - name: Istio Service Dashboard
+#          variables:
+#            namespace: var-namespace
+#            service: var-service
+#        - name: Istio Workload Dashboard
+#          variables:
+#            namespace: var-namespace
+#            workload: var-workload
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kiali-virtualservice
+  namespace: telemetry
+spec:
+  hosts:
+    - "kiali.egoavara.net"
+  gateways:
+    - gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: kiali
+            port:
+              number: 20001
