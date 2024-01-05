@@ -1,24 +1,38 @@
 [workspace]
 members = [
-    #    "app/example1",
-    #    "app/example2",
+    "app/app-server"
 ]
 resolver = "2"
 
 [workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
 
-kafka = { version = "0.10.0" }
+reqwest = { version = "0.11.23", features = ["json"] }
+
+rdkafka = { version = "0.36.0", features = ["cmake-build"] }
 
 serde = { version = "1", features = [] }
 serde_json = { version = "1", features = [] }
 
 regex = { version = "1", features = [] }
 
-openssl = { version = "0.10.59" }
-openssl-sys = { version = "0.9.95" }
+#openssl = { version = "0.10.59" }
+#openssl-sys = { version = "0.9.95" }
 
 tracing = { version = "0.1" }
 tracing-appender = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 tempfile = { version = "3" }
+
+log = { version = "0.4.20" }
+
+axum = { version = "0.7.3" }
+axum-extra = { version = "0.9.1" }
+axum-valid = { version = "0.13.0", default-features = false, features = ["garde"] }
+
+garde = { version = "0.17.0" }
+
+async-graphql = { version = "6.0.11", features = ["tracing", "chrono", "dataloader", "uuid", "graphiql", "apollo_persisted_queries"] }
+async-graphql-axum = { version = "6.0.11", features = [] }
+

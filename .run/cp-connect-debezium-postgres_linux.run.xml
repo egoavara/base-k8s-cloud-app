@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="cp-connect-debezium-postgres:linux" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="imageTag" value="idock.daumkakao.io/kane-woz/cp-connect-debezium-postgres:7.5.0" />
+        <option name="buildCliOptions" value="--platform linux/amd64" />
+        <option name="buildKitEnabled" value="true" />
+        <option name="containerName" value="" />
+        <option name="sourceFilePath" value="dockers/cp-connect-debezium-postgres/Dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

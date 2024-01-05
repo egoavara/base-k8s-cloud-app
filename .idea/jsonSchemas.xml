@@ -35,6 +35,12 @@
                   <Item>
                     <option name="path" value="deploy/system/kustomization.yaml" />
                   </Item>
+                  <Item>
+                    <option name="path" value="deploy/istio/istio-system/kustomization.yaml" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="deploy/istio/istiod/base/kustomization.yaml" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>
