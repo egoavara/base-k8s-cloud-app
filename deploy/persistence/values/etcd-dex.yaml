@@ -1,0 +1,7 @@
+nameOverride: etcd-dex
+
+auth:
+  rbac:
+    allowNoneAuthentication: false
+    existingSecret: etcd-dex-auth
+    existingSecretPasswordKey: root-password

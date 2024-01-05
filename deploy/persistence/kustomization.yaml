@@ -7,10 +7,18 @@ resources:
   - resources/namespace.yaml
   - resources/ldap.yaml
   - resources/kafka.yaml
+  - resources/postgres-svc.yaml
 #  - resources/elasticsearch-kestra.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
+
+
+configMapGenerator:
+  - name: postgres-svc-migration
+    files:
+      - "./configs/postgres-svc-migration/migration.sql"
+      - "./configs/postgres-svc-migration/run.sh"
 
 secretGenerator:
   - name: secret-ldap
@@ -31,6 +39,9 @@ secretGenerator:
 #  - name: secret-neo4j
 #    envs:
 #      - "./secrets/secret-neo4j.env"
+  - name: secret-kafka-connect
+    files:
+      - "./secrets/secret-kafka-connect.env"
 
 helmCharts:
   # postgres for dex
@@ -57,6 +68,12 @@ helmCharts:
     name: postgresql
     version: 13.2.3
     valuesFile: ./values/postgres-svc.yaml
+  # etcd for dex
+  - releaseName: etcd-dex
+    repo: https://charts.bitnami.com/bitnami
+    name: etcd
+    version: 3.4.15
+    valuesFile: ./values/etcd-dex.yaml
 
   # redis (key-value store)
 #  - releaseName: redis

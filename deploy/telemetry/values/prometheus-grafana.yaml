@@ -1,3 +1,7 @@
+# kyverno 정책 우회용
+commonLabels:
+  k8s-app: metrics-server
+
 crds:
   enabled: false
 

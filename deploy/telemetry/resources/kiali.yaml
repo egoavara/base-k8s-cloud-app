@@ -13,8 +13,11 @@ spec:
         - "^.+-manager$"
         - "^.+-operator$"
         - "^.+-system$"
+        - "^.+-monitoring$"
         - "^kube-.+$"
         - "^telemetry$"
+        - "^ingress-nginx$"
+        - "^kyverno$"
       include: []
   external_services:
     prometheus:
