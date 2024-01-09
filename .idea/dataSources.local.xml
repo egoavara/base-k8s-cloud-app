@@ -54,6 +54,9 @@
             <node kind="database" qname="@">
               <node kind="schema" qname="@" />
             </node>
+            <node kind="database" qname="svc">
+              <node kind="schema" qname="hmb" />
+            </node>
             <node kind="database" qname="dex">
               <node kind="schema" qname="public" />
             </node>

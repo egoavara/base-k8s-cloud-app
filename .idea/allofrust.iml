@@ -7,7 +7,10 @@
       <sourceFolder url="file://$MODULE_DIR$/hmb-graph/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/hmb-auth/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/worker-debezium/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/app/app-server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/graph-hmb/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/schema-hmb/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/graph-guard/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/event-hmb/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

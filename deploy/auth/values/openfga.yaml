@@ -1,3 +1,5 @@
+replicaCount: 1
+
 datastore:
   engine: postgres
   uriSecret: "openfga-datastore"
@@ -20,20 +22,20 @@ playground:
   port: 3000
 
 ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-staging"
-  tls:
-    - hosts:
-        - openfga.egoavara.net
-      secretName: openfga-tls
-  hosts:
-    - host: openfga.egoavara.net
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
+  enabled: false
 
+telemetry:
+  trace:
+    enabled: true
+    otlp:
+      endpoint: jaeger-collector.telemetry.svc:4317
+      tls:
+        enabled: false
+    sampleRatio: 100
+
+openfga:
+  selectorLabels:
+    app: openfga
 
 autoscaling:
   enabled: false

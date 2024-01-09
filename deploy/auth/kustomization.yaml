@@ -5,16 +5,32 @@ namespace: auth
 
 resources:
   - resources/namespace.yaml
+  - resources/dex.yaml
+
+patches:
+  - path: patches/dex-deploy.yaml
+  - path: patches/dex-service.yaml
+  - path: patches/openfga-deploy.yaml
+  - path: patches/openfga-service.yaml
 
 secretGenerator:
   - name: openfga-datastore
     envs:
       - "./secrets/openfga-datastore.env"
+  - name: dex-config
+    files:
+      - "./secrets/dex-config/config.yaml"
 
 helmCharts:
   # openfga : Authorization 관리 프로그램
   - releaseName: openfga
     repo: https://openfga.github.io/helm-charts
     name: openfga
-    version: 0.1.31
+    version: 0.1.32
     valuesFile: ./values/openfga.yaml
+  # dex : OpenID Connect Provider
+  - releaseName: dex
+    repo: https://charts.dexidp.io
+    name: dex
+    version: 0.15.3
+    valuesFile: ./values/dex.yaml

@@ -1,33 +1,36 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: kestra-gateway
+  name: dex-gateway
 spec:
   selector:
     istio: ingressgateway
   servers:
     - port:
-        number: 80
-        name: http
-        protocol: HTTP
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: credential-dex
       hosts:
-        - "kestra.egoavara.net"
+        - "dex.egoavara.net"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: kestra-virtualservice
+  name: dex-virtualservice
 spec:
   hosts:
-    - "kestra.egoavara.net"
+    - "dex.egoavara.net"
   gateways:
-    - kestra-gateway
+    - dex-gateway
   http:
     - match:
         - uri:
-            prefix: /
+            prefix: "/"
       route:
         - destination:
-            host: kestra-service
+            host: dex
             port:
-              number: 8080
+              number: 5556

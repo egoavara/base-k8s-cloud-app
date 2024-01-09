@@ -8,7 +8,6 @@ resources:
   - resources/ldap.yaml
   - resources/kafka.yaml
   - resources/postgres-svc.yaml
-#  - resources/elasticsearch-kestra.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
@@ -24,63 +23,47 @@ secretGenerator:
   - name: secret-ldap
     envs:
       - "./secrets/secret-ldap.env"
-  - name: secret-postgres-dex
-    envs:
-      - "./secrets/secret-postgres-dex.env"
-  - name: secret-postgres-kestra
-    envs:
-      - "./secrets/secret-postgres-kestra.env"
   - name: secret-postgres-openfga
     envs:
       - "./secrets/secret-postgres-openfga.env"
   - name: secret-postgres-svc
     envs:
       - "./secrets/secret-postgres-svc.env"
-#  - name: secret-neo4j
-#    envs:
-#      - "./secrets/secret-neo4j.env"
   - name: secret-kafka-connect
     files:
       - "./secrets/secret-kafka-connect.env"
+  - name: etcd-dex-auth
+    envs:
+      - "./secrets/etcd-dex-auth.env"
 
 helmCharts:
-  # postgres for dex
-  - releaseName: postgres-dex
-    repo: https://charts.bitnami.com/bitnami
-    name: postgresql
-    version: 13.2.3
-    valuesFile: ./values/postgres-dex.yaml
-  # postgres for kestra
-  - releaseName: postgres-kestra
-    repo: https://charts.bitnami.com/bitnami
-    name: postgresql
-    version: 13.2.3
-    valuesFile: ./values/postgres-kestra.yaml
   # postgres for openfga
-  - releaseName: postgres-openfga
-    repo: https://charts.bitnami.com/bitnami
+  - repo: https://charts.bitnami.com/bitnami
     name: postgresql
+    namespace: persistence
+    releaseName: postgres-openfga
     version: 13.2.3
     valuesFile: ./values/postgres-openfga.yaml
   # postgres for svc
-  - releaseName: postgres-svc
-    repo: https://charts.bitnami.com/bitnami
+  - repo: https://charts.bitnami.com/bitnami
     name: postgresql
+    namespace: persistence
+    releaseName: postgres-svc
     version: 13.2.3
     valuesFile: ./values/postgres-svc.yaml
   # etcd for dex
-  - releaseName: etcd-dex
-    repo: https://charts.bitnami.com/bitnami
+  - repo: https://charts.bitnami.com/bitnami
     name: etcd
-    version: 3.4.15
+    namespace: persistence
+    releaseName: etcd-dex
+    version: 9.8.0
     valuesFile: ./values/etcd-dex.yaml
-
   # redis (key-value store)
-#  - releaseName: redis
-#    repo: https://charts.bitnami.com/bitnami
-#    name: redis
-#    version: 18.3.0
-#    valuesFile: ./values/redis.yaml
+  #  - releaseName: redis
+  #    repo: https://charts.bitnami.com/bitnami
+  #    name: redis
+  #    version: 18.3.0
+  #    valuesFile: ./values/redis.yaml
   # neo4j (graph database)
 #  - releaseName: neo4j
 #    repo: https://helm.neo4j.com/neo4j

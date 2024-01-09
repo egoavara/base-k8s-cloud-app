@@ -8,3 +8,8 @@ meshConfig:
   defaultConfig:
     tracing:
       sampling: 100
+  extensionProviders:
+    - name: otel
+      envoyOtelAls:
+        service: jaeger-collector.istio-system.svc
+        port: 4317

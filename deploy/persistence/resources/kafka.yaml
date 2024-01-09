@@ -121,8 +121,8 @@ metadata:
 spec:
   replicas: 1
   image:
-#    application: confluentinc/cp-server-connect:7.5.0
-    application: idock.daumkakao.io/kane-woz/cp-connect-debezium-postgres:7.5.0
+    application: confluentinc/cp-server-connect:7.5.0
+    # application: idock.daumkakao.io/kane-woz/cp-connect-debezium-postgres:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
 
   podTemplate:
@@ -134,6 +134,15 @@ spec:
       - config.storage.replication.factor=1
       - offset.storage.replication.factor=1
       - status.storage.replication.factor=1
+  build:
+    type: onDemand
+    onDemand:
+      plugins:
+        locationType: confluentHub
+        confluentHub:
+          - name: debezium-connector-postgresql
+            owner: debezium
+            version: 2.2.1
   dependencies:
     kafka:
       bootstrapEndpoint: kafka:9071
