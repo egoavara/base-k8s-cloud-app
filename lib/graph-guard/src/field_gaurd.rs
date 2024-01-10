@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use async_graphql::{Context, Guard};
 use tokio::sync::RwLock;
+use tracing::info;
+use openfga_client::{CheckResponse, OpenFGA, Tuple};
 
 use crate::{PLACEHOLDER_DEFAULT_USER, User};
-use crate::openfga::{CheckResponse, OpenFGA, Tuple};
 
 #[derive(Default)]
 pub struct FieldGuardContext {
@@ -28,6 +29,7 @@ impl FieldGuard {
 #[async_trait::async_trait]
 impl Guard for FieldGuard {
     async fn check(&self, ctx: &Context<'_>) -> async_graphql::Result<()> {
+        info!("FieldGuard::check");
         let fgctx = ctx.data::<FieldGuardContext>().unwrap();
         if let Some(&is_passed) = fgctx.cached.read().await.get(&(self.object.clone(), self.field.clone())) {
             return if is_passed {
@@ -39,6 +41,15 @@ impl Guard for FieldGuard {
             };
         }
         let mut lock = fgctx.cached.write().await;
+        if let Some(&is_passed) = lock.get(&(self.object.clone(), self.field.clone())) {
+            return if is_passed {
+                Ok(())
+            } else {
+                Err(async_graphql::Error::new(
+                    format!("Access denied for user {} on field {}.{}", ctx.data_opt::<User>().unwrap_or_else(|| &PLACEHOLDER_DEFAULT_USER), self.object.as_str(), self.field.as_str())
+                ))
+            };
+        }
 
         let openfga = ctx.data::<OpenFGA>().unwrap();
 

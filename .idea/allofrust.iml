@@ -11,6 +11,8 @@
       <sourceFolder url="file://$MODULE_DIR$/lib/schema-hmb/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib/graph-guard/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/event-hmb/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/bootstrap/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/openfga-client/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

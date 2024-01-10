@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard",
+    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client",
 ]
 resolver = "2"
 
@@ -20,7 +20,7 @@ regex = { version = "1", features = [] }
 opentelemetry = { version = "0.21.0", features = ["trace", "logs", "metrics"] }
 opentelemetry_sdk = { version = "0.21.0", features = ["trace", "logs", "metrics", "rt-tokio"] }
 opentelemetry-stdout = { version = "0.2.0", features = ["logs", "trace", "metrics"] }
-opentelemetry-otlp = { version = "0.14.0", features = ["trace", "logs", "http-proto", "reqwest-rustls", "metrics"] }
+opentelemetry-otlp = { version = "0.14.0", features = ["serialize", "trace", "logs", "http-proto", "reqwest-rustls", "metrics"] }
 opentelemetry-http = { version = "0.10.0", features = [] }
 
 tracing = { version = "0.1" }
@@ -42,6 +42,7 @@ garde = { version = "0.17.0" }
 
 async-graphql = { version = "7.0.0", features = ["dataloader", "uuid", "graphiql", "apollo_persisted_queries", "time"] }
 async-graphql-axum = { version = "7.0.0", features = [] }
+async-graphql-value = { version = "7.0.0", features = [] }
 
 time = { version = "0.3.31", features = ["serde", "serde-human-readable", "parsing"] }
 
@@ -55,6 +56,10 @@ task-local-extensions = { version = "0.1.4" }
 
 tonic = { version = "0.10.2", features = [] }
 
-graph-guard = { path = "lib/graph-guard" }
 
 anyhow = { version = "1", features = [] }
+thiserror = { version = "1", features = [] }
+
+bootstrap = { path = "lib/bootstrap" }
+graph-guard = { path = "lib/graph-guard" }
+openfga-client = { path = "lib/openfga-client" }

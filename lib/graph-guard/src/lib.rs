@@ -3,12 +3,17 @@ use std::ops::Deref;
 
 use async_graphql::{ErrorExtensions, Guard};
 
-pub mod openfga;
 mod field_gaurd;
 mod role_gaurd;
+mod guard_state;
+mod graph_guard;
+mod directive;
 
 pub use field_gaurd::*;
 pub use role_gaurd::*;
+pub use graph_guard::*;
+pub use directive::*;
+
 
 const PLACEHOLDER_DEFAULT_USER: User = User {
     hint: None,

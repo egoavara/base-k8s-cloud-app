@@ -18,14 +18,16 @@ use crate::entity::Hmb;
 
 use crate::object::{NameFilter, OffsetDateTimeFilter, SortDirection, UuidFilter};
 use crate::traits::GeneralTable;
+use graph_guard::rebac;
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow, SimpleObject)]
 pub struct Story {
-    #[graphql(guard = r#"FieldGuard::new("Story", "story_id")"#)]
+    // #[graphql(guard = r#"FieldGuard::new("Story", "story_id")"#)]
+    #[graphql(directive = rebac::apply("allow".to_string(), "Story".to_string(), "story_id".to_string(), true))]
     pub story_id: Uuid,
-    #[graphql(guard = r#"FieldGuard::new("Story", "title")"#)]
+    // #[graphql(guard = r#"FieldGuard::new("Story", "title")"#)]
     pub title: String,
-    #[graphql(guard = r#"FieldGuard::new("Story", "post_at")"#)]
+    // #[graphql(guard = r#"FieldGuard::new("Story", "post_at")"#)]
     pub post_at: OffsetDateTime,
 }
 
@@ -116,6 +118,7 @@ impl GeneralTable for Story {
             .and_where_option(post_at_gte.map(|gte| Expr::col(StoryIdentity::PostAt).gte(gte)))
             .and_where_option(post_at_lt.map(|lt| Expr::col(StoryIdentity::PostAt).lt(lt)))
             .and_where_option(post_at_lte.map(|lte| Expr::col(StoryIdentity::PostAt).lte(lte)))
+            .limit(2)
             .build_sqlx(PostgresQueryBuilder);
         let result = sqlx::query_as_with::<_, Story, _>(&query, values)
             .fetch_all(&loader.0)

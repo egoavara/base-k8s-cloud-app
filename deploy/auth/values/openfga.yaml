@@ -22,7 +22,10 @@ playground:
   port: 3000
 
 ingress:
+
   enabled: false
+image:
+  tag: "v1.4.1"
 
 telemetry:
   trace:

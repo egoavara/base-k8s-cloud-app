@@ -1,15 +1,9 @@
 use std::collections::HashMap;
 
-use opentelemetry::{Context, global};
-use opentelemetry::propagation::Injector;
-use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
-use opentelemetry::trace::FutureExt;
 use opentelemetry_http::HeaderInjector;
-use opentelemetry_sdk::propagation::TraceContextPropagator;
 use reqwest::{Client, StatusCode};
-use reqwest::header::{HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
+use tracing::info;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 pub type ConditionContext = HashMap<String, serde_json::Value>;
@@ -67,6 +61,21 @@ pub enum CheckResponse {
     InternalServerError { code: String, message: String },
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Reqwest: {0}")]
+    Reqwest(reqwest::Error),
+
+    #[error("OpenFGA::Check unreachable status code: {0}")]
+    CheckUnexpectedStatusCode(StatusCode),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(e: reqwest::Error) -> Self {
+        Self::Reqwest(e)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct CheckResponseOk {
     allowed: bool,
@@ -85,24 +94,6 @@ pub struct OpenFGA {
     store_id: String,
     authorization_model_id: String,
     client: Client,
-}
-
-#[derive(Debug)]
-pub enum Error {
-    Reqwest(reqwest::Error),
-    UnreachableStatusCode(StatusCode),
-}
-
-impl From<reqwest::Error> for Error {
-    fn from(error: reqwest::Error) -> Self {
-        Self::Reqwest(error)
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
-    }
 }
 
 impl OpenFGA {
@@ -127,7 +118,7 @@ impl OpenFGA {
                 context,
             })
             .build()?;
-        global::get_text_map_propagator(|propagator| {
+        opentelemetry::global::get_text_map_propagator(|propagator| {
             propagator.inject_context(&span.context(), &mut HeaderInjector(&mut request.headers_mut()));
         });
         let response = self
@@ -172,8 +163,12 @@ impl OpenFGA {
                 })
             }
             _ => {
-                Err(Error::UnreachableStatusCode(response.status()))
+                Err(Error::CheckUnexpectedStatusCode(response.status()))
             }
         }
     }
+}
+
+pub async fn init() -> OpenFGA {
+    OpenFGA::new("http://openfga.auth.svc:8080", "01HKFPBB8QM0WA62EKD01D2MRA".to_string(), "01HKH2WQR7CKSCX0FKW9JGBN7B".to_string())
 }

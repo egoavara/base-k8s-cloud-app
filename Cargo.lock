@@ -441,6 +441,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "bootstrap"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-axum",
+ "async-trait",
+ "axum 0.7.3",
+ "axum-client-ip",
+ "axum-extra",
+ "graph-guard",
+ "opentelemetry",
+ "opentelemetry-http",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "reqwest",
+ "sea-query",
+ "sea-query-binder",
+ "serde",
+ "sqlx",
+ "task-local-extensions",
+ "time",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -957,8 +988,11 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 name = "graph-guard"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-graphql",
+ "async-graphql-value",
  "async-trait",
+ "openfga-client",
  "opentelemetry",
  "opentelemetry-http",
  "opentelemetry_sdk",
@@ -966,6 +1000,7 @@ dependencies = [
  "serde",
  "serde_json",
  "task-local-extensions",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-opentelemetry",
@@ -982,7 +1017,9 @@ dependencies = [
  "axum 0.7.3",
  "axum-client-ip",
  "axum-extra",
+ "bootstrap",
  "graph-guard",
+ "openfga-client",
  "opentelemetry",
  "opentelemetry-http",
  "opentelemetry-otlp",
@@ -1660,6 +1697,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
+name = "openfga-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "opentelemetry",
+ "opentelemetry-http",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-opentelemetry",
+]
+
+[[package]]
 name = "openssl-probe"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1709,6 +1762,7 @@ dependencies = [
  "opentelemetry_sdk",
  "prost",
  "reqwest",
+ "serde",
  "thiserror",
  "tokio",
  "tonic",

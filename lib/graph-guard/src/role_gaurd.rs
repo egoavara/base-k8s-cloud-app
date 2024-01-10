@@ -1,5 +1,5 @@
 use async_graphql::{Context, Guard};
-use crate::openfga::{CheckResponse, OpenFGA, Tuple};
+use openfga_client::{CheckResponse, OpenFGA, Tuple};
 use crate::{PLACEHOLDER_DEFAULT_USER, User};
 
 pub struct RoleGuard {

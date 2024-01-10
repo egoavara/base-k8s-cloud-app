@@ -9,11 +9,10 @@ spec:
     enabled: false
   agent:
     strategy: DaemonSet
-  storage:
-    type: memory
-    options:
-      memory:
-        max-traces: 100000
+#  storage:
+#    type: elasticsearch
+#    options:
+#
 #  strategy: production
 #  collector:
 #    maxReplicas: 1
@@ -21,11 +20,11 @@ spec:
 #      limits:
 #        cpu: 100m
 #        memory: 128Mi
-#  storage:
-#    type: memory
-#    options:
-#      memory:
-#        max-traces: 100000
+  storage:
+    type: memory
+    options:
+      memory:
+        max-traces: 100000
 #  ingress:
 #    enabled: false
 #  agent:
