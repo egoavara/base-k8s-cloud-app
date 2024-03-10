@@ -4,15 +4,24 @@ metadata:
   name: jaeger
   namespace: telemetry
 spec:
-  strategy: allInOne
+  strategy: production
   ingress:
     enabled: false
   agent:
     strategy: DaemonSet
-#  storage:
-#    type: elasticsearch
-#    options:
-#
+  storage:
+    elasticsearch:
+      doNotProvision: true
+    type: elasticsearch
+    options:
+      es:
+        server-urls: http://elasticsearch-telemetry-es-http.persistence.svc:9200
+        index-prefix: jaeger
+
+
+  #  strategy: allInOne
+
+
 #  strategy: production
 #  collector:
 #    maxReplicas: 1
@@ -20,11 +29,11 @@ spec:
 #      limits:
 #        cpu: 100m
 #        memory: 128Mi
-  storage:
-    type: memory
-    options:
-      memory:
-        max-traces: 100000
+#  storage:
+#    type: memory
+#    options:
+#      memory:
+#        max-traces: 100000
 #  ingress:
 #    enabled: false
 #  agent:
@@ -46,6 +55,6 @@ spec:
             prefix: /
       route:
         - destination:
-            host: jaeger-query
+            host: oauth2proxy-jaeger
             port:
-              number: 16686
+              number: 80

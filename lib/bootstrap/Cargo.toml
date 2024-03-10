@@ -37,7 +37,5 @@ graph-guard = { workspace = true }
 reqwest = { workspace = true }
 
 sqlx = { workspace = true }
-sea-query = { workspace = true }
-sea-query-binder = { workspace = true }
 
 

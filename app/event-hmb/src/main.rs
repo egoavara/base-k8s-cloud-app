@@ -84,43 +84,42 @@
 //     }
 // }
 
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::time::Duration;
 use axum::extract::{MatchedPath, Request};
 use axum::response::IntoResponse;
-use axum::{response, Router};
 use axum::routing::get;
+use axum::{response, Router};
 use opentelemetry::{global, KeyValue};
 use opentelemetry_http::{HeaderExtractor, HeaderInjector};
 use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::{Resource, trace};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::runtime::Tokio;
 use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler};
+use opentelemetry_sdk::{trace, Resource};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::time::Duration;
 use tower_http::trace::TraceLayer;
 use tracing::{info, info_span, instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-use tracing_subscriber::{filter, Layer};
 use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{filter, Layer};
 
 #[instrument(skip_all)]
 async fn test() -> impl IntoResponse {
-    info!("test");
     response::Json("Hello, World!".to_string())
 }
 
 #[tokio::main]
 async fn main() {
-
     // Then pass it into pipeline builder
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
-        .with_exporter(opentelemetry_otlp::new_exporter()
-            .tonic()
-            .with_endpoint("http://jaeger-collector.telemetry.svc:4317")
-            .with_timeout(Duration::from_secs(3))
-            .with_protocol(opentelemetry_otlp::Protocol::Grpc)
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint("http://jaeger-collector.telemetry.svc:4317")
+                .with_timeout(Duration::from_secs(3))
+                .with_protocol(opentelemetry_otlp::Protocol::Grpc),
         )
         .with_trace_config(
             trace::config()
@@ -129,41 +128,41 @@ async fn main() {
                 // .with_max_events_per_span(64)
                 // .with_max_attributes_per_span(16)
                 // .with_max_events_per_span(16)
-                .with_resource(Resource::new(vec![
-                    KeyValue::new("service.name", "event-hmb")
-                ]))
+                .with_resource(Resource::new(vec![KeyValue::new(
+                    "service.name",
+                    "event-hmb",
+                )])),
         )
         .install_batch(Tokio)
         .unwrap();
 
     let telemetry = tracing_opentelemetry::layer()
         .with_tracer(tracer)
-        .with_filter(filter::LevelFilter::INFO)
-        ;
+        .with_filter(filter::LevelFilter::INFO);
 
-    let subscriber = tracing_subscriber::registry()
-        .with(telemetry)
-        .with(
-            tracing_subscriber::fmt::layer()
-                .pretty()
-                .with_filter(filter::LevelFilter::INFO)
-        );
+    let subscriber = tracing_subscriber::registry().with(telemetry).with(
+        tracing_subscriber::fmt::layer()
+            .pretty()
+            .with_filter(filter::LevelFilter::INFO),
+    );
     // tracing::subscriber::set_global_default(subscriber).unwrap();
     global::set_text_map_propagator(TraceContextPropagator::new());
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
     tracing::info!("Starting up");
-    let app = Router::new()
-        .route("/test", get(test))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(|request: &Request<_>| {
+    let app =
+        Router::new()
+            .route("/test", get(test))
+            .layer(
+                TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
                     // HeaderMap to Hashmap string string
-                    let b = request.headers().iter().map(|(k, v)| (k.to_string(), v.to_str().unwrap().to_string())).collect::<HashMap<String, String>>();
+                    let b = request
+                        .headers()
+                        .iter()
+                        .map(|(k, v)| (k.to_string(), v.to_str().unwrap().to_string()))
+                        .collect::<HashMap<String, String>>();
 
-                    let ctx = global::get_text_map_propagator(|propagator| {
-                        propagator.extract(&b)
-                    });
+                    let ctx = global::get_text_map_propagator(|propagator| propagator.extract(&b));
 
                     // Log the matched route's path (with placeholders not filled in).
                     // Use request.uri() or OriginalUri if you want the real path.
@@ -181,8 +180,13 @@ async fn main() {
                     span.set_parent(ctx);
 
                     span
-                })
-        );
+                }),
+            );
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8001").await.unwrap();
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }

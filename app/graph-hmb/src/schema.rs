@@ -1,17 +1,16 @@
+use async_graphql::connection::Connection;
 use async_graphql::{Context, Object};
-use async_graphql::dataloader::Loader;
-use sqlx::query_as;
-use tracing::{info, instrument};
+use tracing::instrument;
+
+use general_table::object::Cursor;
+use general_table::traits::TableDefinition;
 
 use crate::entity;
-use crate::entity::Story;
-use crate::object::Cursor;
-use crate::traits::GeneralTable;
 
-pub type Schema = async_graphql::Schema<Query, async_graphql::EmptyMutation, async_graphql::EmptySubscription>;
+pub type Schema =
+    async_graphql::Schema<Query, async_graphql::EmptyMutation, async_graphql::EmptySubscription>;
 
 pub struct Query;
-
 
 #[Object]
 impl Query {
@@ -32,20 +31,26 @@ impl Query {
     //     story.into()
     // }
 
-    #[instrument(level = "info", name = "stories", skip_all)]
-    async fn find_stories<'a>(
+    #[instrument(level = "info", name = "find_otype", skip_all)]
+    async fn find_otype<'a>(
         &self,
         ctx: &Context<'a>,
-        #[graphql(desc = "The cursor for pagination")]
-        cursor: Option<Cursor>,
-        filter: Option<<Story as GeneralTable>::Filter>,
-        sorting: Option<<Story as GeneralTable>::Sorting>,
-    ) -> Vec<entity::Story> {
-        info!("find_stories : {:#?}", ctx.field());
-        let loader = ctx.data::<<Story as GeneralTable>::Loader>().unwrap();
-        let result = Story::load(&loader, filter.unwrap_or_default(), sorting.unwrap_or_default())
-            .await
-            .unwrap();
+        #[graphql(desc = "Cursor for pagination")] cursor: Option<Cursor>,
+        #[graphql(desc = "Filter for the query")] filter: Option<
+            <entity::public::Otype as TableDefinition>::Filter,
+        >,
+        #[graphql(desc = "Sorting for the query")] sorting: Option<
+            <entity::public::Otype as TableDefinition>::Sorting,
+        >,
+    ) -> Connection<String, entity::public::Otype> {
+        let result = entity::public::Otype::find(
+            ctx,
+            cursor.unwrap_or_default(),
+            filter.unwrap_or_default(),
+            sorting.unwrap_or_default(),
+        )
+        .await
+        .unwrap();
         result
     }
 }

@@ -1,12 +1,20 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client",
+    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive",
 ]
 resolver = "2"
 
+[workspace.metadata.cargo-udeps.ignore]
+normal = ["ahash"]
+
 [workspace.dependencies]
+
+tap = { version = "1.0.1" }
+
+
 http = { version = "1", features = [] }
 tokio = { version = "1", features = ["full"] }
+futures = { version = "0.3.30", features = [] }
 
 reqwest = { version = "0.11.23", default-features = false, features = ["json", "rustls-tls", "gzip"] }
 
@@ -14,6 +22,7 @@ rdkafka = { version = "0.36.0", features = ["cmake-build"] }
 
 serde = { version = "1", features = [] }
 serde_json = { version = "1", features = [] }
+base64 = { version = "0.21.7", features = [] }
 
 regex = { version = "1", features = [] }
 
@@ -49,13 +58,35 @@ time = { version = "0.3.31", features = ["serde", "serde-human-readable", "parsi
 async-trait = { version = "0.1.77", features = [] }
 
 sqlx = { version = "0.7.3", features = ["runtime-tokio-rustls", "macros", "postgres", "uuid", "time", "json", "ipnetwork", "regexp"] }
-sea-query = { version = "0.30.6", features = ["attr", "derive", "backend-postgres", "postgres-array", "with-uuid", "with-time", "with-json", "with-ipnetwork"] }
-sea-query-binder = { version = "0.5.0", features = ["runtime-tokio-rustls", "sqlx-postgres", "postgres-array", "with-uuid", "with-time", "with-json", "with-ipnetwork"] }
+sea-query = { version = "0.31.0-rc.4", features = [
+    "derive",
+    "attr",
+    "backend-postgres",
+    "with-chrono",
+    "with-json",
+    "with-uuid",
+    "with-ipnetwork",
+    "with-mac_address",
+    "postgres-array",
+    "postgres-interval"
+] }
+sea-query-binder = { version = "0.6.0-rc.1", features = [
+    "sqlx-postgres",
+    "with-chrono",
+    "with-json",
+    "with-uuid",
+    "with-time",
+    "with-ipnetwork",
+    "with-mac_address",
+    "postgres-array",
+    "runtime-async-std-native-tls",
+] }
 
 task-local-extensions = { version = "0.1.4" }
 
 tonic = { version = "0.10.2", features = [] }
 
+itertools = { version = "0.12.1" }
 
 anyhow = { version = "1", features = [] }
 thiserror = { version = "1", features = [] }
@@ -63,3 +94,4 @@ thiserror = { version = "1", features = [] }
 bootstrap = { path = "lib/bootstrap" }
 graph-guard = { path = "lib/graph-guard" }
 openfga-client = { path = "lib/openfga-client" }
+general-table = { path = "lib/general-table" }

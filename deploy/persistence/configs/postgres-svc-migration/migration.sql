@@ -1,69 +1,71 @@
-create extension if not exists btree_gist;
+create extension if not exists "uuid-ossp";
 
-create table if not exists asset
+create table if not exists project
 (
-    id      uuid primary key default gen_random_uuid(),
-    barcode varchar not null,
-    name    varchar not null
-
-    );
-
-create table if not exists server
-(
-    id       uuid    not null,
-    type     varchar not null,
-    os       varchar not null,
-    hostname varchar not null,
-    domain   varchar not null,
-    foreign key (id) references asset (id)
-    );
-
-create table if not exists cia
-(
-    id              uuid not null,
-    confidentiality int4 not null default 1,
-    integrity       int4 not null default 1,
-    availability    int4 not null default 1,
-    check ( confidentiality > 0 ),
-    check ( integrity > 0 ),
-    check ( availability > 0 ),
-    foreign key (id) references asset (id)
-    );
-
-
-create table if not exists idc_building
-(
-    building varchar primary key
+    project_id  uuid          not null default uuid_generate_v4(),
+    name        varchar(1024) not null,
+    description varchar       null,
+    primary key (project_id)
 );
 
-create table if not exists idc_floor
+create table if not exists otype
 (
-    building varchar,
-    floor    varchar,
-    primary key (building, floor),
-    foreign key (building) references idc_building (building)
-    );
+    otype_id    uuid          not null default uuid_generate_v4(),
+    name        varchar(1024) not null,
+    description varchar       null,
+    definition  jsonb         not null,
+    primary key (otype_id)
 
-create table if not exists idc_rack
-(
-    building varchar,
-    floor    varchar,
-    x        int4      not null,
-    y        int4      not null,
-    z_range  int4range not null,
-    primary key (building, floor, x, y),
-    foreign key (building, floor) references idc_floor (building, floor)
-    );
+);
 
-create table if not exists location
+create table if not exists source
 (
-    id      uuid      not null,
-    b       varchar   not null,
-    f       varchar   not null,
-    x       int       not null,
-    y       int       not null,
-    z_range int4range not null,
-    foreign key (id) references asset (id),
-    foreign key (b, f, x, y) references idc_rack (building, floor, x, y),
-    exclude using gist(b with =, f with =, x with =, y with =, z_range with &&)
-    );
+    source_id   uuid          not null default uuid_generate_v4(),
+    name        varchar(1024) not null,
+    description varchar       null,
+    primary key (source_id)
+);
+
+create table if not exists value
+(
+    value_id    uuid    not null default uuid_generate_v4(),
+    source_id   uuid    not null,
+    user_name   varchar not null,
+    relation    varchar not null,
+    object_name varchar not null,
+
+    primary key (value_id),
+    foreign key (source_id) references source (source_id)
+);
+
+create table if not exists project_otype
+(
+    project_id uuid not null,
+    otype_id   uuid not null,
+    primary key (project_id, otype_id),
+    foreign key (project_id) references project (project_id),
+    foreign key (otype_id) references otype (otype_id)
+);
+
+create table if not exists project_source
+(
+    project_id      uuid not null,
+    user_otype_id   uuid not null,
+    object_otype_id uuid not null,
+    source_id       uuid not null,
+    primary key (project_id, user_otype_id, object_otype_id, source_id),
+    foreign key (project_id, user_otype_id) references project_otype (project_id, otype_id),
+    foreign key (project_id, object_otype_id) references project_otype (project_id, otype_id),
+    foreign key (source_id) references source (source_id)
+);
+
+create table if not exists source_assignable
+(
+    source_id       uuid not null,
+    user_otype_id   uuid not null,
+    object_otype_id uuid not null,
+    primary key (source_id, user_otype_id, object_otype_id),
+    foreign key (source_id) references source (source_id),
+    foreign key (user_otype_id) references otype (otype_id),
+    foreign key (object_otype_id) references otype (otype_id)
+);

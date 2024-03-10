@@ -35,6 +35,23 @@ configMapGenerator:
       labels:
         grafana_dashboard: "1"
 
+secretGenerator:
+  - name: grafana-ldap
+    namespace: telemetry
+    files:
+      - ./secrets/grafana-ldap/ldap-toml
+  - name: oauth2proxy-jaeger
+    namespace: telemetry
+    files:
+      - ./secrets/oauth2proxy-jaeger/cookie-secret
+      - ./secrets/oauth2proxy-jaeger/oauth2_proxy.yml
+  - name: oauth2proxy-prometheus
+    namespace: telemetry
+    files:
+      - ./secrets/oauth2proxy-prometheus/cookie-secret
+      - ./secrets/oauth2proxy-prometheus/oauth2_proxy.yml
+
+
 helmCharts:
   # prometheus and grafana
   - releaseName: prometheus-grafana
@@ -44,3 +61,17 @@ helmCharts:
     namespace: telemetry
     valuesFile: ./values/prometheus-grafana.yaml
     includeCRDs: false
+  # oauth2proxy for jaeger
+  - releaseName: oauth2proxy-jaeger
+    repo: https://oauth2-proxy.github.io/manifests
+    version: 6.23.1
+    namespace: telemetry
+    name: oauth2-proxy
+    valuesFile: ./values/oauth2proxy-jaeger.yaml
+  # oauth2proxy for prometheus
+  - releaseName: oauth2proxy-prometheus
+    repo: https://oauth2-proxy.github.io/manifests
+    version: 6.23.1
+    namespace: telemetry
+    name: oauth2-proxy
+    valuesFile: ./values/oauth2proxy-prometheus.yaml

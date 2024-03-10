@@ -15,9 +15,19 @@ pub struct ContextualTuples {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Tuple {
-    user: String,
-    relation: String,
-    object: String,
+    pub user: String,
+    pub relation: String,
+    pub object: String,
+}
+
+impl std::fmt::Display for Tuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "is {} related to {} as {}?",
+            self.user, self.object, self.relation
+        )
+    }
 }
 
 impl Tuple {
@@ -97,7 +107,11 @@ pub struct OpenFGA {
 }
 
 impl OpenFGA {
-    pub fn new<URL: Into<String>>(url: URL, store_id: String, authorization_model_id: String) -> Self {
+    pub fn new<URL: Into<String>>(
+        url: URL,
+        store_id: String,
+        authorization_model_id: String,
+    ) -> Self {
         Self {
             url: url.into(),
             store_id,
@@ -105,8 +119,12 @@ impl OpenFGA {
             client: Client::new(),
         }
     }
-    #[tracing::instrument]
-    pub async fn check(&self, tuple_key: Tuple, context: Option<ConditionContext>) -> Result<CheckResponse, Error> {
+    #[tracing::instrument(skip_all, fields(tuple.user = tuple_key.user, tuple.relation = tuple_key.relation, tuple.object = tuple_key.object))]
+    pub async fn check(
+        &self,
+        tuple_key: Tuple,
+        context: Option<ConditionContext>,
+    ) -> Result<CheckResponse, Error> {
         let span = tracing::Span::current();
         let mut request = self
             .client
@@ -119,14 +137,13 @@ impl OpenFGA {
             })
             .build()?;
         opentelemetry::global::get_text_map_propagator(|propagator| {
-            propagator.inject_context(&span.context(), &mut HeaderInjector(&mut request.headers_mut()));
+            propagator.inject_context(
+                &span.context(),
+                &mut HeaderInjector(&mut request.headers_mut()),
+            );
         });
-        let response = self
-            .client
-            .execute(request)
-            .await?;
-        info!("tuple: {:?}", tuple_key);
-        match response.status() {
+        let response = self.client.execute(request).await?;
+        let result = match response.status() {
             StatusCode::OK => {
                 let body: CheckResponseOk = response.json().await?;
                 Ok(CheckResponse::Ok {
@@ -162,13 +179,17 @@ impl OpenFGA {
                     message: body.message,
                 })
             }
-            _ => {
-                Err(Error::CheckUnexpectedStatusCode(response.status()))
-            }
-        }
+            _ => Err(Error::CheckUnexpectedStatusCode(response.status())),
+        };
+        info!("OpenFGA::Check {:?} is {:?}", tuple_key, result);
+        result
     }
 }
 
 pub async fn init() -> OpenFGA {
-    OpenFGA::new("http://openfga.auth.svc:8080", "01HKFPBB8QM0WA62EKD01D2MRA".to_string(), "01HKH2WQR7CKSCX0FKW9JGBN7B".to_string())
+    OpenFGA::new(
+        "http://openfga.auth.svc:8080",
+        "01HKFPBB8QM0WA62EKD01D2MRA".to_string(),
+        "01HM13RRGHG855RS2QVGFECF6Y".to_string(),
+    )
 }

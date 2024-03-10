@@ -1,0 +1,32 @@
+model
+  schema 1.1
+
+type user
+
+type group
+  relations
+    define member: [user] or member from parent
+    define parent: [group]
+
+type role
+  relations
+    define allow: ([user:*, user, group#member] or allow from parent) but not deny
+    define deny: ([user, group#member] or deny from parent)
+    define parent: [role]
+
+type object
+  relations
+    define allow: ([user:*, user, group#member]) but not deny
+    define deny: [user, group#member]
+
+type field
+  relations
+    define owned: [object]
+    define allow: ([user:*, user, group#member] or allow from owned) but not deny
+    define deny: [user, group#member] or deny from owned
+
+type row
+  relations
+    define owned: [object]
+    define allow: ([user:*, user, group#member] or allow from owned) but not deny
+    define deny: [user, group#member] or deny from owned

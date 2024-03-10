@@ -1,13 +1,18 @@
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
-  name: elasticsearch
+  name: elasticsearch-telemetry
 spec:
   version: 8.11.3
   nodeSets:
     - name: default
       count: 1
       config:
+        xpack.security.authc:
+          anonymous:
+            username: anonymous
+            roles: superuser
+            authz_exception: false
         node.store.allow_mmap: false
       volumeClaimTemplates:
         - metadata:
@@ -19,13 +24,17 @@ spec:
               requests:
                 storage: 5Gi
             storageClassName: hostpath
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
 ---
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
-  name: kibana
+  name: kibana-telemetry
 spec:
   version: 8.11.3
   count: 1
   elasticsearchRef:
-    name: elasticsearch
+    name: elasticsearch-telemetry

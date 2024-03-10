@@ -1,0 +1,24 @@
+nameOverride: oauth2proxy-prometheus
+namespaceOverride: telemetry
+
+config:
+  configFile: |
+    email_domains = [ "*" ]
+
+extraEnv:
+  - name: OAUTH2_PROXY_COOKIE_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: oauth2proxy-prometheus
+        key: cookie-secret
+
+alphaConfig:
+  enabled: true
+  existingSecret: oauth2proxy-prometheus
+
+proxyVarsAsSecrets: false
+
+#nodeSelector:
+# kubernetes.io/os: linux
+# kubernetes.io/arch: amd64
+# kubernetes.io/hostname: k8s-master
