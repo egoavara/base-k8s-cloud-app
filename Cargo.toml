@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive",
+    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-define", "lib/table-traits-impl",
 ]
 resolver = "2"
 
@@ -22,6 +22,8 @@ rdkafka = { version = "0.36.0", features = ["cmake-build"] }
 
 serde = { version = "1", features = [] }
 serde_json = { version = "1", features = [] }
+serde_qs = { version = "0.12.0", features = [] }
+
 base64 = { version = "0.21.7", features = [] }
 
 regex = { version = "1", features = [] }
@@ -48,6 +50,8 @@ tower = { version = "0.4.13", features = [] }
 tower-http = { version = "0.5.0", features = ["trace"] }
 
 garde = { version = "0.17.0" }
+
+uuid = { version = "1.8.0", features = ["v4"] }
 
 async-graphql = { version = "7.0.0", features = ["dataloader", "uuid", "graphiql", "apollo_persisted_queries", "time"] }
 async-graphql-axum = { version = "7.0.0", features = [] }
@@ -95,3 +99,4 @@ bootstrap = { path = "lib/bootstrap" }
 graph-guard = { path = "lib/graph-guard" }
 openfga-client = { path = "lib/openfga-client" }
 general-table = { path = "lib/general-table" }
+table-traits = { path = "lib/table-traits" }

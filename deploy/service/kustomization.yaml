@@ -5,6 +5,7 @@ namespace: service
 
 resources:
   - resources/namespace.yaml
+  - resources/dummy.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

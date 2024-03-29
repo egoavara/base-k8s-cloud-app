@@ -1,34 +1,39 @@
-use std::any::Any;
 use std::collections::HashMap;
-use std::convert::{identity, Infallible};
-use std::fmt::Display;
+use std::convert::Infallible;
 use std::hash::Hash;
-use std::iter::Map;
 
 use async_graphql::async_trait::async_trait;
 use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::dataloader::{DataLoader, Loader};
-use async_graphql::{Context, InputObject, SimpleObject};
-use futures::future::{join_all, BoxFuture, FutureExt};
+
+use async_graphql::{ComplexObject, Context, InputObject, SimpleObject};
+use futures::future::{join_all, FutureExt};
 use itertools::Itertools;
-use sea_query::{enum_def, Expr, PostgresQueryBuilder, Query, SelectStatement, SimpleExpr};
+use sea_query::{
+    enum_def, ColumnRef, Expr, JoinType, PostgresQueryBuilder, Query, SeaRc, SimpleExpr,
+};
 use sea_query_binder::SqlxBinder;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::types::Uuid;
-use sqlx::IntoArguments;
-use sqlx::{query_as, Database, Encode, FromRow, PgPool, Postgres, QueryBuilder, Type};
+use sqlx::{query_as, FromRow, PgPool, Row};
 use tap::{Tap, TapOptional};
 use tracing::{info, instrument};
 
 use general_table::config::GeneralTableConfig;
-use general_table::object::{Cursor, NameFilter, UuidFilter};
+use general_table::object::{Cursor, IdRef, NameFilter, UuidFilter};
 use general_table::scalar::{AscendingOption, SortDirection, SortOption};
-use general_table::traits::{FilterField, FilterTable, SortingTable, TableDefinition};
+use general_table::traits::{
+    FilterField, FilterTable, InsertingError, InsertingTable, SortingTable, TableDefinition,
+    UpdatingTable,
+};
 use graph_guard::rebac;
+
+use crate::entity::public::{Project, ProjectOtypeRefs};
 
 #[enum_def(prefix = "", suffix = "Refs")]
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow, SimpleObject)]
+#[graphql(complex)]
 pub struct Otype {
     pub otype_id: Uuid,
     pub name: String,
@@ -37,18 +42,36 @@ pub struct Otype {
     pub definition: Value,
 }
 
+#[ComplexObject]
+impl Otype {}
+
 pub struct OtypeLoader(PgPool);
 
-#[derive(Debug, Default, InputObject)]
+#[derive(Debug, Default, Clone, InputObject)]
 pub struct OtypeFilter {
-    otype_id: Option<UuidFilter>,
-    name: Option<NameFilter>,
+    pub otype_id: Option<UuidFilter>,
+    pub name: Option<NameFilter>,
 }
 
-#[derive(Debug, Default, InputObject)]
+#[derive(Debug, Default, Clone, InputObject)]
 pub struct OtypeSorting {
-    otype_id: Option<AscendingOption>,
-    name: Option<SortOption>,
+    pub otype_id: Option<AscendingOption>,
+    pub name: Option<SortOption>,
+}
+
+#[derive(Debug, Default, Clone, SimpleObject)]
+pub struct OtypeModifing {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    #[graphql(directive = rebac::apply("allow", "field", "Otype.definition"))]
+    pub definition: Option<Value>,
+}
+
+#[derive(Debug, Default, Clone, InputObject)]
+pub struct OtypeCreating {
+    pub name: String,
+    pub description: Option<String>,
+    pub definition: Option<Value>,
 }
 
 impl FilterTable for OtypeFilter {
@@ -76,29 +99,44 @@ impl SortingTable for OtypeSorting {
             self.name.map(|x| (OtypeRefs::Name, x.order, x.direction)),
         ]
         .into_iter()
-        .filter_map(identity)
+        .flatten()
         .sorted_by(|(_, x, _), (_, y, _)| x.cmp(y))
         .map(|(x, _, y)| (x, y))
         .collect()
     }
+}
 
-    fn key_candidate(
+#[async_trait]
+impl InsertingTable for OtypeCreating {
+    type Returning = Otype;
+    type Failure = String;
+
+    async fn insert<'ctx>(
         &self,
-        table: &Self::Table,
-    ) -> HashMap<<Self::Table as TableDefinition>::References, Value> {
-        let mut result = HashMap::new();
-        if self.otype_id.is_some() {
-            result.insert(
-                OtypeRefs::OtypeId,
-                serde_json::to_value(&table.otype_id).unwrap(),
-            );
-        }
-        if self.name.is_some() {
-            result.insert(OtypeRefs::Name, serde_json::to_value(&table.name).unwrap());
-        }
-        result
+        ctx: &Context<'ctx>,
+    ) -> Result<Self::Returning, InsertingError<Self::Failure>> {
+        let pool = ctx.data_unchecked::<PgPool>();
+        let row = sqlx::query_as!(
+            Otype,
+            r#"
+                insert into public.otype (name, description, definition)
+                values ($1, $2, $3)
+                returning *
+            "#,
+            self.name,
+            self.description,
+            self.definition
+        )
+        .fetch_one(pool)
+        .await
+        .map_err(|err| InsertingError::Throw(err.to_string()))?;
+        Ok(row)
     }
 }
+//
+// impl UpdatingTable for OtypeModifing {
+//     type Table = Otype;
+// }
 
 #[async_trait]
 impl TableDefinition for Otype {
@@ -108,16 +146,12 @@ impl TableDefinition for Otype {
     type Filter = OtypeFilter;
     type Sorting = OtypeSorting;
 
-    fn new_loader(pool: &PgPool) -> Self::Loader {
-        OtypeLoader(pool.clone())
+    fn table() -> Self::References {
+        OtypeRefs::Table
     }
 
     fn id_column() -> Self::References {
         OtypeRefs::OtypeId
-    }
-
-    fn get_id(&self) -> Self::Id {
-        self.otype_id
     }
 
     fn encode_field(&self, key: Self::References) -> Value {
@@ -133,28 +167,18 @@ impl TableDefinition for Otype {
     fn decode_field(key: Self::References, value: Value) -> SimpleExpr {
         match key {
             OtypeRefs::OtypeId => serde_json::from_value::<Uuid>(value)
-                .map(|x| Expr::value(x))
+                .map(Expr::value)
                 .unwrap(),
             OtypeRefs::Name => serde_json::from_value::<String>(value)
-                .map(|x| Expr::value(x))
+                .map(Expr::value)
                 .unwrap(),
             OtypeRefs::Description => serde_json::from_value::<String>(value)
-                .map(|x| Expr::value(x))
+                .map(Expr::value)
                 .unwrap(),
             OtypeRefs::Definition => Expr::value(value),
             _ => unreachable!(),
         }
     }
-
-    // fn parse_value(key: <Self::Table as TableDefinition>::References, value: Value) -> Result<SimpleExpr, serde_json::Error> {
-    //     match key {
-    //         OtypeRefs::OtypeId => serde_json::from_value::<Uuid>(value).map(|x| Expr::value(x)),
-    //         OtypeRefs::Name => serde_json::from_value::<String>(value).map(|x| Expr::value(x)),
-    //         OtypeRefs::Description => serde_json::from_value::<String>(value).map(|x| Expr::value(x)),
-    //         OtypeRefs::Definition => Ok(Expr::value(value)),
-    //         _ => unreachable!()
-    //     }
-    // }
 
     #[instrument(skip_all)]
     async fn find<'a>(
@@ -173,13 +197,7 @@ impl TableDefinition for Otype {
         let (query, parames) = Query::select()
             // 필요한 컬럼 선택
             .tap_mut(|x| {
-                x.columns(vec![
-                    OtypeRefs::OtypeId,
-                    OtypeRefs::Name,
-                    OtypeRefs::Description,
-                    OtypeRefs::Definition,
-                ])
-                .from(OtypeRefs::Table);
+                x.column(OtypeRefs::OtypeId).from(OtypeRefs::Table);
             })
             // where 절 동적 생성 시작
             // - 필터 적용
@@ -201,34 +219,28 @@ impl TableDefinition for Otype {
                 });
             })
             .build_sqlx(PostgresQueryBuilder);
-        info!("Begin load otype");
         // 대상 id 전체 조회
-        let result = sqlx::query_scalar_with::<_, Uuid, _>(&query, parames)
+        info!("otype find query: {}, {:?}", &query, &parames);
+        let result_ids = sqlx::query_scalar_with::<_, Uuid, _>(&query, parames)
             .fetch_all(pool)
             .await?;
+        let result = join_all(result_ids.into_iter().map(|otype_id| {
+            FutureExt::map(loader.load_one(otype_id), |x| x.unwrap().unwrap())
+                .map(|x| Edge::new(sorting.encode_key(&x), x))
+        }))
+        .await;
         // has_next, has_prev 계산
-        // let prepared_has_next_prev = cursor.prepare_has_next_prev(&result, OtypeIdentity::OtypeId, (Public, OtypeIdentity::Table));
-        // let (query, values) = prepared_has_next_prev.build_sqlx(PostgresQueryBuilder);
-        // let row = sqlx::query_with(&query, values).fetch_one(&loader.0).await?;
-        // let has_prev = row.get::<bool, _>(0);
-        // let has_next = row.get::<bool, _>(1);
-        // 결과물 리턴
-        // let mut entities = loader.load_many(result.iter().cloned()).await?;
-        // let mut connection = Connection::new(has_prev, has_next);
-        let mut connection = Connection::new(false, false);
-        // let result = result.into_iter()
-        //     .map(async |otype_id| {
-        //         Edge::new(otype_id.to_string(), otype_id)
-        // }).collect();
-
-        connection.edges.extend(
-            join_all(result.into_iter().map(|otype_id| {
-                FutureExt::map(loader.load_one(otype_id), |x| x.unwrap().unwrap())
-                    .map(|x| Edge::new(sorting.encode_key(&x), x))
-            }))
-            .await,
-        );
-
+        let (cursor_query, cursor_values) = cursor
+            .prepare_cursor_result(&result, &filter, &sorting)
+            .build_sqlx(PostgresQueryBuilder);
+        let row = sqlx::query_with(&cursor_query, cursor_values)
+            .fetch_one(pool)
+            .await?;
+        let has_prev = row.get::<bool, _>(0);
+        let has_next = row.get::<bool, _>(1);
+        // 결과물 반환
+        let mut connection = Connection::new(has_prev, has_next);
+        connection.edges.extend(result);
         Ok(connection)
     }
 }
@@ -253,5 +265,76 @@ impl Loader<Uuid> for OtypeLoader {
         .unwrap();
 
         Ok(result.into_iter().map(|val| (val.otype_id, val)).collect())
+    }
+}
+
+#[async_trait]
+impl Loader<IdRef<Project, Otype>> for OtypeLoader {
+    type Value = Vec<Otype>;
+    type Error = Infallible;
+    #[instrument(skip_all)]
+    async fn load(
+        &self,
+        keys: &[IdRef<Project, Otype>],
+    ) -> Result<HashMap<IdRef<Project, Otype>, Self::Value>, Self::Error> {
+        let mut result = HashMap::new();
+        let mut grouped_by = HashMap::<Option<String>, (OtypeFilter, Vec<Uuid>)>::new();
+        for data in keys {
+            result.entry(data.clone()).or_insert_with(Vec::new);
+            grouped_by
+                .entry(data.group.clone())
+                .or_insert_with(|| (data.filter.clone().unwrap_or_default(), Vec::new()))
+                .1
+                .push(data.id);
+        }
+        #[derive(FromRow, Debug)]
+        struct ProjectOtype {
+            project_id: Uuid,
+            #[sqlx(flatten)]
+            otype: Otype,
+        }
+        for (group, (filter, data)) in grouped_by.into_iter() {
+            // select 문 동적 생성 시작
+            let (query, parames) = Query::select()
+                // 필요한 컬럼 선택
+                .tap_mut(|x| {
+                    x.column((ProjectOtypeRefs::Table, ProjectOtypeRefs::ProjectId))
+                        .column(ColumnRef::TableAsterisk(SeaRc::new(OtypeRefs::Table)))
+                        .from(ProjectOtypeRefs::Table)
+                        .join(
+                            JoinType::InnerJoin,
+                            OtypeRefs::Table,
+                            Expr::col((OtypeRefs::Table, OtypeRefs::OtypeId)).eq(Expr::col((
+                                ProjectOtypeRefs::Table,
+                                ProjectOtypeRefs::OtypeId,
+                            ))),
+                        );
+                })
+                // where 절 동적 생성 시작
+                // - 필터 적용
+                .tap_mut(|x| {
+                    filter.apply(x);
+                    x.and_where(
+                        Expr::col((ProjectOtypeRefs::Table, ProjectOtypeRefs::ProjectId))
+                            .is_in(data.clone()),
+                    );
+                })
+                .build_sqlx(PostgresQueryBuilder);
+            let temp = sqlx::query_as_with::<_, ProjectOtype, _>(&query, parames)
+                .fetch_all(&self.0)
+                .await
+                .unwrap();
+            for data in temp.into_iter() {
+                result
+                    .get_mut(&IdRef::<Project, Otype>::new(
+                        group.clone(),
+                        data.project_id,
+                        None,
+                    ))
+                    .unwrap()
+                    .push(data.otype);
+            }
+        }
+        Ok(result)
     }
 }

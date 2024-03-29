@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: dummy
+    version: 0.0.1
+  name: dex
+spec:
+  ports:
+    - appProtocol: http
+      name: http-graphql
+      port: 8000
+      protocol: TCP
+      targetPort: http-graphql
+  selector:
+    app: dummy
+    version: 0.0.1
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dummy
+    version: 0.0.1
+  name: dummy
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: dummy
+      version: 0.0.1
+  template:
+    metadata:
+      labels:
+        app: dummy
+        version: 0.0.1
+    spec:
+      containers:
+        - name: ubuntu
+          image: ubuntu:latest
+          # Just spin & wait forever
+          command: [ "/bin/bash", "-c", "--" ]
+          args: [ "while true; do sleep 30; done;" ]
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: dummy-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: credential-dummy
+      hosts:
+        - "dummy.egoavara.net"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: dummy-virtualservice
+spec:
+  hosts:
+    - "dummy.egoavara.net"
+  gateways:
+    - dummy-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/"
+      route:
+        - destination:
+            host: dummy
+            port:
+              number: 8000

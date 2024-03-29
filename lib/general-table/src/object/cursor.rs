@@ -1,16 +1,13 @@
+use async_graphql::connection::{CursorType, Edge};
 use std::collections::HashMap;
-use std::fmt::Display;
-use std::hash::Hash;
 
-use async_graphql::InputObject;
+use async_graphql::{InputObject, ObjectType};
 use base64::Engine;
-use itertools::Itertools;
-use sea_query::{ConditionalStatement, Expr, Iden, SimpleExpr};
-use serde::de::DeserializeOwned;
-use sqlx::Database;
+use sea_query::{Alias, ConditionalStatement, Expr, Iden, SelectStatement, SimpleExpr};
+use tap::Tap;
 
 use crate::config::CursorConfig;
-use crate::traits::{SortingTable, TableDefinition};
+use crate::traits::{FilterTable, SortingTable, TableDefinition};
 
 #[derive(Debug, Default, Clone, InputObject)]
 pub struct Cursor {
@@ -38,12 +35,9 @@ pub(crate) fn decode_key(
             .unwrap();
         // TODO: error handling 추가
         let tmp = serde_json::from_slice::<HashMap<String, serde_json::Value>>(&key).unwrap();
-        dst.extend(tmp.into_iter());
+        dst.extend(tmp);
     } else {
-        dst.insert(
-            default_identity.into(),
-            serde_json::Value::String(key.to_string()),
-        );
+        dst.insert(default_identity, serde_json::Value::String(key.to_string()));
     }
     Ok(())
 }
@@ -52,7 +46,7 @@ impl Cursor {
     pub fn validate<ST: SortingTable>(
         self,
         config: &CursorConfig,
-        sorting: &ST,
+        _sorting: &ST,
     ) -> Result<ValidatedCursor, async_graphql::Error> {
         let Cursor {
             after: raw_after,
@@ -90,7 +84,7 @@ impl Cursor {
         Ok(ValidatedCursor {
             after,
             before,
-            limit: first.or_else(|| last).or(config.default_limit),
+            limit: first.or(last).or(config.default_limit),
         })
     }
 }
@@ -102,7 +96,7 @@ impl ValidatedCursor {
         sorting: &ST,
     ) -> &'a mut T {
         let values = sorting
-            .order_by_clause()
+            .safe_order_by_clause()
             .into_iter()
             .map(|(col, _)| {
                 (
@@ -128,10 +122,8 @@ impl ValidatedCursor {
                 let mut before_cond = Expr::col(i_col.clone()).lt(i_before.clone());
                 for j in 0..i {
                     let j_col = values[j].0.clone();
-                    // let j_before = sorting.decode_key(i_col.clone(), values[j].1.clone()).unwrap();
                     let j_before = values[j]
                         .1
-                        .clone()
                         .map(|x| TB::decode_field(i_col.clone(), x.clone()));
                     if let Some(j_before) = j_before {
                         before_cond = before_cond.and(Expr::col(j_col).eq(j_before.clone()));
@@ -140,13 +132,12 @@ impl ValidatedCursor {
                 result.push(before_cond);
             }
             // after
-            if let Some(i_after) = i_after.clone() {
+            if let Some(i_after) = i_after {
                 let mut after_cond = Expr::col(i_col.clone()).gt(i_after.clone());
                 for j in 0..i {
                     let j_col = values[j].0.clone();
                     let j_after = values[j]
                         .2
-                        .clone()
                         .map(|x| TB::decode_field(j_col.clone(), x.clone()));
                     if let Some(j_after) = j_after {
                         after_cond = after_cond.and(Expr::col(j_col).eq(j_after.clone()));
@@ -160,30 +151,110 @@ impl ValidatedCursor {
         }
         query
     }
-    // pub fn condition<'qb, 'args: 'qb, ST: SortingTable>(&self, builder: &mut QueryBuilder<'args, Postgres>, config: &CursorConfig, sorting: &ST) {
-    //     let values = sorting.get_ordered_identities().into_iter()
-    //         .map(|(col, _)| (col, self.before.get(col).unwrap(), self.after.get(col).unwrap()))
-    //         .filter(|(_, before, after)| !(before.is_null() && after.is_null()))
-    //         .collect::<Vec<_>>();
-    //     if values.is_empty() { return; }
-    //
-    //     builder.push(" and ((");
-    //
-    //     let mut binder = builder.separated(") or (".to_string());
-    //     builder.push(")) ");
-    // }
-    // pub fn order_by<'args, ST: SortingTable>(&'args self, builder: &mut QueryBuilder<'args, Postgres>, sorting: &ST) {
-    //     builder.push(" order by ");
-    //     let mut order_by_clause = builder.separated(", ");
-    //     for (ident, direction) in sorting.get_ordered_identities() {
-    //         match direction {
-    //             SortDirection::Ascending => {
-    //                 order_by_clause.push(format!("{} asc", ident));
-    //             }
-    //             SortDirection::Descending => {
-    //                 order_by_clause.push(format!("{} desc", ident));
-    //             }
-    //         }
-    //     }
-    // }
+
+    fn cursor_after<TB: TableDefinition>(
+        &self,
+        data: &TB,
+        cols: &Vec<TB::References>,
+    ) -> SimpleExpr {
+        cols.iter()
+            .enumerate()
+            .map(|(i, col)| {
+                let gt = Expr::col(col.clone()).gt(TB::decode_field(
+                    col.clone(),
+                    data.encode_field(col.clone()),
+                ));
+                cols.iter()
+                    .take(i)
+                    .map(|eq_col| {
+                        Expr::col(eq_col.clone()).eq(TB::decode_field(
+                            eq_col.clone(),
+                            data.encode_field(eq_col.clone()),
+                        ))
+                    })
+                    .fold(gt, |acc, curr| acc.and(curr))
+            })
+            .reduce(|a, b| a.or(b))
+            .unwrap_or_else(|| Expr::value(false))
+    }
+
+    fn cursor_before<TB: TableDefinition>(
+        &self,
+        data: &TB,
+        cols: &Vec<TB::References>,
+    ) -> SimpleExpr {
+        cols.iter()
+            .enumerate()
+            .map(|(i, col)| {
+                let lt = Expr::col(col.clone()).lt(TB::decode_field(
+                    col.clone(),
+                    data.encode_field(col.clone()),
+                ));
+                cols.iter()
+                    .take(i)
+                    .map(|eq_col| {
+                        Expr::col(eq_col.clone()).eq(TB::decode_field(
+                            eq_col.clone(),
+                            data.encode_field(eq_col.clone()),
+                        ))
+                    })
+                    .fold(lt, |acc, curr| acc.and(curr))
+            })
+            .reduce(|a, b| a.or(b))
+            .unwrap_or_else(|| Expr::value(false))
+    }
+
+    pub fn prepare_cursor_result<CS, TB, EM, FT, ST>(
+        &self,
+        result: &Vec<Edge<CS, TB, EM>>,
+        ft: &FT,
+        st: &ST,
+    ) -> SelectStatement
+    where
+        CS: CursorType + Send + Sync,
+        TB: TableDefinition,
+        EM: ObjectType,
+        ST: SortingTable<Table = TB>,
+        FT: FilterTable<Table = TB>,
+    {
+        let cols = st
+            .safe_order_by_clause()
+            .into_iter()
+            .map(|(col, _)| col)
+            .collect::<Vec<_>>();
+        if cols.is_empty() {
+            return SelectStatement::new()
+                .expr_as(Expr::value(false), Alias::new("has_prev"))
+                .expr_as(Expr::value(false), Alias::new("has_next"))
+                .to_owned();
+        }
+        // has_prev
+        let has_prev = match result.first() {
+            Some(first) => SelectStatement::new()
+                .column(TB::id_column())
+                .from(TB::table())
+                .and_where(self.cursor_before(&first.node, &cols))
+                .tap_deref_mut(|x| {
+                    ft.apply(x);
+                })
+                .to_owned(),
+            None => SelectStatement::new().expr(Expr::value(false)).to_owned(),
+        };
+        // has_next
+        let has_next = match result.last() {
+            Some(last) => SelectStatement::new()
+                .column(TB::id_column())
+                .from(TB::table())
+                .and_where(self.cursor_after(&last.node, &cols))
+                .tap_deref_mut(|x| {
+                    ft.apply(x);
+                })
+                .to_owned(),
+            None => SelectStatement::new().expr(Expr::value(false)).to_owned(),
+        };
+        SelectStatement::new()
+            .expr_as(Expr::exists(has_prev), Alias::new("has_prev"))
+            .expr_as(Expr::exists(has_next), Alias::new("has_next"))
+            .to_owned()
+    }
 }

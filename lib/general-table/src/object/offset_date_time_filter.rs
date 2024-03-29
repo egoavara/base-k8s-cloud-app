@@ -2,9 +2,6 @@ use crate::scalar::OffsetDateTimeScalar;
 use crate::traits::FilterField;
 use async_graphql::InputObject;
 use sea_query::{Expr, IntoColumnRef, SimpleExpr};
-use sqlx::query_builder::Separated;
-use sqlx::{Database, Postgres};
-use std::fmt::Display;
 
 #[derive(Debug, Clone, Default, InputObject)]
 pub struct OffsetDateTimeFilter {

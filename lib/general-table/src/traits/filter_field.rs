@@ -1,7 +1,7 @@
 use sea_query::{IntoColumnRef, SimpleExpr};
 
 pub(crate) fn escape_like_pg(text: impl AsRef<str>) -> String {
-    text.as_ref().replace("%", "\\%").replace("_", "\\_")
+    text.as_ref().replace('%', "\\%").replace('_', "\\_")
 }
 
 pub trait FilterField {

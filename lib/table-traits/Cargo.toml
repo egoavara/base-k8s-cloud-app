@@ -1,0 +1,12 @@
+[package]
+name = "table-traits"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+table-traits-derive = { path = "../table-traits-derive" }
+table-traits-impl = { path = "../table-traits-impl" }
+table-traits-define = { path = "../table-traits-define" }

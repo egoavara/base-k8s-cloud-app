@@ -4,15 +4,16 @@ kind: Kustomization
 resources:
   - resources/namespace.yaml
   - resources/minio-operator.yaml
+  - resources/istio-telemetry.yaml
 
 helmCharts:
   # letsencrypt 인증서 관리도구
-  - releaseName: certmanager-operator
-    repo: https://charts.bitnami.com/bitnami
+  - releaseName: cert-manager
+    repo: https://charts.jetstack.io
     name: cert-manager
-    version: 0.13.2
+    version: 1.14.4
     namespace: cert-manager
-    valuesFile: ./values/certmanager-operator.yaml
+    valuesFile: ./values/certmanager.yaml
     includeCRDs: true
   # elasticsearch 관리도구
   - releaseName: eck-operator

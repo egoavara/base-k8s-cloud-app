@@ -1,15 +1,18 @@
-global:
-  proxy:
-    tracer: "zipkin"
-  tracer:
-    zipkin:
-      address: "jaeger-collector.telemetry.svc:9411"
+global: {}
+
 meshConfig:
   defaultConfig:
+    tracing: {}
+
+  defaultProviders:
     tracing:
-      sampling: 100
+      - opentelemetry
+
   extensionProviders:
-    - name: otel
-      envoyOtelAls:
-        service: jaeger-collector.istio-system.svc
+    - name: "opentelemetry"
+      opentelemetry:
+        service: "jaeger-collector.telemetry.svc.cluster.local"
         port: 4317
+
+  enablePrometheusMerge: true
+  trustDomain: cluster.local

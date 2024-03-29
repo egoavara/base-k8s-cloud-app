@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use std::sync::Arc;
 
-use async_graphql::extensions::{ExtensionContext, NextParseQuery, NextValidation};
+use async_graphql::extensions::{
+    ExtensionContext, NextParseQuery, NextValidation,
+};
 use async_graphql::parser::types::ExecutableDocument;
 use async_graphql::{ServerError, ServerResult, ValidationResult, Variables};
 use tokio::sync::Mutex;
@@ -55,6 +57,7 @@ impl async_graphql::extensions::Extension for GraphGuardExtension {
         self.shared.lock().await.replace(directives);
         Ok(parsed)
     }
+
     #[tracing::instrument(skip_all)]
     async fn validation(
         &self,
@@ -65,7 +68,7 @@ impl async_graphql::extensions::Extension for GraphGuardExtension {
         let user = ctx
             .data_opt::<User>()
             .cloned()
-            .unwrap_or_else(|| Default::default());
+            .unwrap_or_else(Default::default);
         let mut directives = JoinSet::new();
         for x in self.shared.lock().await.take() {
             let tuple = x.type_directive.tuple(&user);

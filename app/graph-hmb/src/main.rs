@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 
 use async_graphql::dataloader::DataLoader;
-use async_graphql::futures_util::SinkExt;
+
 use async_graphql::http::{GraphiQLSource, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{EmptyMutation, EmptySubscription};
+use async_graphql::EmptySubscription;
 use async_graphql_axum::{GraphQLProtocol, GraphQLRequest, GraphQLResponse, GraphQLWebSocket};
 use axum::extract::{MatchedPath, Request, State, WebSocketUpgrade};
 use axum::http::HeaderMap;
@@ -16,24 +16,19 @@ use axum_extra::headers::authorization::Basic;
 use axum_extra::headers::Authorization;
 use axum_extra::TypedHeader;
 use opentelemetry::global;
-use opentelemetry::global::ObjectSafeLoggerProvider;
-use opentelemetry::trace::{FutureExt, TracerProvider};
-use opentelemetry_otlp::WithExportConfig;
-use sqlx::ConnectOptions;
+
 use tower_http::trace::TraceLayer;
 use tracing::{info, info_span, instrument, span, Instrument, Level};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 
 use general_table::config::{CursorConfig, GeneralTableConfig};
-use general_table::traits::TableDefinition;
+
 use graph_guard::User;
 
-use crate::schema::{Query, Schema};
+use crate::schema::{InnerLoader, Mutation, Query, Schema};
 
 pub mod entity;
-mod schema;
+pub mod schema;
 
 #[instrument(skip_all)]
 fn get_token_from_headers(
@@ -95,18 +90,23 @@ async fn main() {
     };
     info!("Starting up");
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .data(DataLoader::new(
-            entity::public::Otype::new_loader(&pg),
-            |x| tokio::spawn(x.instrument(span!(Level::INFO, "dataloader"))),
-        ))
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
+        // .data(DataLoader::new(
+        //     entity::public::Otype::new_loader(&pg),
+        //     |x| tokio::spawn(x.instrument(span!(Level::INFO, "dataloader"))),
+        // ))
+        // .data(DataLoader::new(
+        //     entity::public::Project::new_loader(&pg),
+        //     |x| tokio::spawn(x.instrument(span!(Level::INFO, "dataloader"))),
+        // ))
+        .data(DataLoader::new(InnerLoader, |x| {
+            tokio::spawn(x.instrument(span!(Level::INFO, "dataloader")))
+        }))
         .data(config)
         .data(pg)
         // .extension(async_graphql::extensions::Tracing)
         .extension(graph_guard::GraphGuard::new(openfga))
         .finish();
-
-    // println!("{}", schema.sdl());
 
     let app = Router::new()
         .route("/", get(graphiql).post(graphql_handler))
@@ -114,7 +114,7 @@ async fn main() {
         .with_state(schema)
         .layer(
             TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
-                // HeaderMap to Hashmap string string
+                // HeaderMap to Hashmap string
                 let b = request
                     .headers()
                     .iter()
@@ -137,7 +137,6 @@ async fn main() {
                     // some_other_field = tracing::field::Empty,
                 );
                 span.set_parent(ctx);
-
                 span
             }),
         )

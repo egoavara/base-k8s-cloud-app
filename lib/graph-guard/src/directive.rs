@@ -102,7 +102,7 @@ impl<'a> TryFrom<&'a MetaDirectiveInvocation> for RebacTypeDirective {
             (rel, otype, oid, _) => {
                 let not_exist_fields = vec![rel, otype, oid]
                     .into_iter()
-                    .filter_map(|x| x)
+                    .flatten()
                     .collect::<Vec<_>>();
                 Err(crate::Error::DirectiveNoRequiredField(not_exist_fields))
             }
@@ -200,14 +200,14 @@ impl rebac {
         let otype = otype.into();
         let oid = oid.into();
 
-        if otype.contains(":") {
+        if otype.contains(':') {
             panic!(
                 "otype cannot contain ':', for '? {} {}:{}'",
                 rel, otype, oid
             );
         }
 
-        if oid.contains(":") {
+        if oid.contains(':') {
             panic!("oid cannot contain ':', for '? {} {}:{}'", rel, otype, oid);
         }
 

@@ -34,3 +34,4 @@ graph-guard = { workspace = true }
 
 reqwest = { workspace = true }
 #rdkafka = { workspace = true }
+table-traits = { workspace = true }

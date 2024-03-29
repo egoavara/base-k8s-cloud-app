@@ -6,7 +6,7 @@ use async_graphql::parser::types::{
 };
 use async_graphql::registry::{MetaDirective, MetaField, MetaType, Registry};
 use async_graphql::{Pos, Positioned, ServerError};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::RebacTypeDirective;
 
@@ -60,7 +60,6 @@ impl<'a> DirectiveSearcher<'a> {
             }
             Err(err) => {
                 self.errors.push(err);
-                return;
             }
         }
     }
@@ -110,14 +109,22 @@ impl<'a> DirectiveSearcher<'a> {
 
     fn search_field(&mut self, parent_otype: &String, field: &'a Positioned<Field>) {
         let field_name = field.node.name.node.to_string();
-        let (child_field, child_type) =
-            match self.get_field_type_by_name(&parent_otype, &field_name) {
-                Ok(ok) => ok,
-                Err(err) => {
-                    self.errors.push(err);
+        let (child_field, child_type) = match self.get_field_type_by_name(parent_otype, &field_name)
+        {
+            Ok(Some(data)) => data,
+            Ok(None) => {
+                // like __typename, some kind of graphql internal field can be ignored (not registered in schema registry)
+                if field_name.starts_with("__") {
                     return;
                 }
-            };
+                warn!("field {} not found at {}", &field_name, &parent_otype);
+                return;
+            }
+            Err(err) => {
+                self.errors.push(err);
+                return;
+            }
+        };
         // ex. Query ... { find: [Entity!]! (Entity) ... }
         info!(
             "searching at {} ... {{ {}: {} ({}) ... }}",
@@ -165,24 +172,17 @@ impl<'a> DirectiveSearcher<'a> {
         &self,
         otype: &String,
         field_name: &str,
-    ) -> Result<(MetaField, MetaType), crate::Error> {
+    ) -> Result<Option<(MetaField, MetaType)>, crate::Error> {
         let meta_type = self.registry.types.get(otype);
         match meta_type {
             Some(meta_type) => match meta_type.fields() {
-                Some(meta_field) => meta_field
-                    .get(field_name)
-                    .ok_or_else(|| crate::Error::RuntimeUnknownTypeField {
-                        otype: otype.clone(),
-                        field: field_name.to_string(),
-                    })
-                    .and_then(|f| {
-                        self.registry
-                            .concrete_type_by_name(&f.ty)
-                            .map(|x| (f.clone(), x.clone()))
-                            .ok_or_else(|| crate::Error::RuntimeUnknownType {
-                                otype: otype.clone(),
-                            })
-                    }),
+                Some(meta_field) => {
+                    let field = meta_field.get(field_name).cloned();
+                    let r#type = field
+                        .as_ref()
+                        .and_then(|f| self.registry.concrete_type_by_name(&f.ty).cloned());
+                    Ok(field.and_then(|f| r#type.map(|t| (f, t))))
+                }
                 None => Err(crate::Error::RuntimeUnknownTypeField {
                     otype: otype.clone(),
                     field: field_name.to_string(),
@@ -193,6 +193,7 @@ impl<'a> DirectiveSearcher<'a> {
             }),
         }
     }
+
     pub(crate) fn end(self) -> Result<Vec<FoundRebacTypeDirective>, ServerError> {
         if self.errors.is_empty() {
             Ok(self.directives)

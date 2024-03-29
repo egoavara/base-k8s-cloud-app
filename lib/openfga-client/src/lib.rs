@@ -137,10 +137,7 @@ impl OpenFGA {
             })
             .build()?;
         opentelemetry::global::get_text_map_propagator(|propagator| {
-            propagator.inject_context(
-                &span.context(),
-                &mut HeaderInjector(&mut request.headers_mut()),
-            );
+            propagator.inject_context(&span.context(), &mut HeaderInjector(request.headers_mut()));
         });
         let response = self.client.execute(request).await?;
         let result = match response.status() {

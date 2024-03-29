@@ -12,6 +12,6 @@ pub async fn init_svc() -> PgPool {
         .database("svc")
         .log_statements(LevelFilter::Info)
         .log_slow_statements(LevelFilter::Warn, Duration::from_secs(1));
-    let pool = PgPoolOptions::new().connect_with(pgoption).await.unwrap();
-    pool
+
+    PgPoolOptions::new().connect_with(pgoption).await.unwrap()
 }

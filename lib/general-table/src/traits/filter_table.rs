@@ -1,10 +1,8 @@
-use std::convert::identity;
-
 use sea_query::{ConditionalStatement, SimpleExpr};
 
 use crate::traits::TableDefinition;
 
-pub trait FilterTable {
+pub trait FilterTable: Clone {
     type Table: TableDefinition;
 
     fn where_clause(&self) -> Vec<Option<SimpleExpr>>;
@@ -16,7 +14,7 @@ pub trait FilterTable {
         }
         r#where
             .into_iter()
-            .filter_map(identity)
+            .flatten()
             .fold(query, |query, expr| query.and_where(expr))
     }
 }

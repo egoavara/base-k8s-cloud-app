@@ -1,0 +1,20 @@
+[package]
+name = "table-traits-impl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+async-trait = { workspace = true }
+async-graphql = { workspace = true }
+sea-query = { workspace = true }
+
+
+serde = { version = "1" }
+serde_qs = { version = "0.12" }
+
+uuid = { version = "1" }
+
+table-traits-derive = { path = "../table-traits-derive" }
