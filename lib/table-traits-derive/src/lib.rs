@@ -1,26 +1,38 @@
 use proc_macro::TokenStream;
 
-#[proc_macro_derive(Table, attributes(table))]
+use table_traits_core::CrateLocation;
+
+#[proc_macro_derive(Table, attributes(table, column))]
 pub fn table(input: TokenStream) -> TokenStream {
-    table_traits_core::table("table_traits", input.into()).into()
+    table_traits_core::table(CrateLocation::Outside, input.into()).into()
 }
 
 #[proc_macro]
 pub fn filter(input: TokenStream) -> TokenStream {
-    table_traits_core::filter("table_traits", input.into()).into()
+    table_traits_core::filter(CrateLocation::Outside, input.into()).into()
 }
 
 #[proc_macro]
 pub fn filter_internal(input: TokenStream) -> TokenStream {
-    table_traits_core::filter("table_traits_impl", input.into()).into()
+    table_traits_core::filter(CrateLocation::OtherSubCrate, input.into()).into()
+}
+
+#[proc_macro]
+pub fn filter_crate(input: TokenStream) -> TokenStream {
+    table_traits_core::filter(CrateLocation::InCrate, input.into()).into()
 }
 
 #[proc_macro]
 pub fn sorter(input: TokenStream) -> TokenStream {
-    table_traits_core::sorter("table_traits", input.into()).into()
+    table_traits_core::sorter(CrateLocation::Outside, input.into()).into()
 }
 
 #[proc_macro]
 pub fn sorter_internal(input: TokenStream) -> TokenStream {
-    table_traits_core::sorter("table_traits_impl", input.into()).into()
+    table_traits_core::sorter(CrateLocation::OtherSubCrate, input.into()).into()
+}
+
+#[proc_macro]
+pub fn sorter_crate(input: TokenStream) -> TokenStream {
+    table_traits_core::sorter(CrateLocation::InCrate, input.into()).into()
 }

@@ -7,14 +7,26 @@ edition = "2021"
 
 [dependencies]
 
-async-trait = { workspace = true }
-async-graphql = { workspace = true }
-sea-query = { workspace = true }
-
-
+async-trait = { version = "0.1" }
+async-graphql = { version = "7", features = ["uuid"] }
+async-graphql-value = { version = "7", features = [] }
+derivative = { version = "2" }
 serde = { version = "1" }
-serde_qs = { version = "0.12" }
-
+serde_json = { version = "1" }
+postcard = { version = "1", features = ["alloc"] }
+data-encoding = { version = "2", features = [] }
+time = { version = "0.3", features = ["macros", "serde"] }
 uuid = { version = "1" }
-
+thiserror = { version = "1" }
 table-traits-derive = { path = "../table-traits-derive" }
+
+[dependencies.sea-query]
+version = "0"
+default-features = false
+features = ["derive", "backend-postgres"]
+
+
+
+[features]
+default = ["with-uuid"]
+with-uuid = ["sea-query/with-uuid"]

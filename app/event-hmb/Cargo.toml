@@ -6,32 +6,47 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+task-local-extensions = { workspace = true }
+
+# runtime
+tokio = { workspace = true }
+
+# serde
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# utils
+time = { workspace = true }
+uuid = { workspace = true }
+
+# Datasources
+sqlx = { workspace = true }
+sea-query = { workspace = true }
+sea-query-binder = { workspace = true }
+
+# Web(HTTP, GRPC, GRAPHQL)
+tower-http = { workspace = true }
+
+async-graphql = { workspace = true }
+async-graphql-axum = { workspace = true }
+async-graphql-value = { workspace = true }
+
+axum = { workspace = true }
+axum-extra = { workspace = true }
+axum-client-ip = { workspace = true }
+
+# tracing
+tracing = { workspace = true }
+tracing-appender = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry-http = { workspace = true }
 
-task-local-extensions = { workspace = true }
-
-tokio = { workspace = true }
-sqlx = { workspace = true }
-axum = { workspace = true }
-axum-extra = { workspace = true }
-axum-client-ip = { workspace = true }
-async-graphql = { workspace = true }
-async-graphql-axum = { workspace = true }
-serde = { workspace = true }
-time = { workspace = true }
-
-tower-http = { workspace = true }
-
-tracing = { workspace = true }
-tracing-appender = { workspace = true }
-tracing-subscriber = { workspace = true }
-tracing-opentelemetry = { workspace = true }
 # internal dependencies
-graph-guard = { workspace = true }
+bootstrap = { workspace = true }
+table-traits = { workspace = true, features = [] }
 
-reqwest = { workspace = true }
-#rdkafka = { workspace = true }
-table-traits = { workspace = true }

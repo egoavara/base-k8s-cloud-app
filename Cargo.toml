@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-define", "lib/table-traits-impl",
+    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-impl", "lib/gql-impl-sqlx", "lib/gql-impl", "lib/gql-impl-derive", "lib/gql-impl-macro", "lib/gql-impl-loader", "lib/gql-impl-loader-sqlx",
 ]
 resolver = "2"
 
@@ -62,11 +62,10 @@ time = { version = "0.3.31", features = ["serde", "serde-human-readable", "parsi
 async-trait = { version = "0.1.77", features = [] }
 
 sqlx = { version = "0.7.3", features = ["runtime-tokio-rustls", "macros", "postgres", "uuid", "time", "json", "ipnetwork", "regexp"] }
-sea-query = { version = "0.31.0-rc.4", features = [
+sea-query = { version = "0.30", features = [
     "derive",
     "attr",
     "backend-postgres",
-    "with-chrono",
     "with-json",
     "with-uuid",
     "with-ipnetwork",
@@ -74,9 +73,8 @@ sea-query = { version = "0.31.0-rc.4", features = [
     "postgres-array",
     "postgres-interval"
 ] }
-sea-query-binder = { version = "0.6.0-rc.1", features = [
+sea-query-binder = { version = "0.5.0", features = [
     "sqlx-postgres",
-    "with-chrono",
     "with-json",
     "with-uuid",
     "with-time",

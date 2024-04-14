@@ -1,3 +1,7 @@
+use sea_query::{ColumnRef, Condition, IntoColumnRef};
+
+use crate::private::FilterType;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FilterKind {
     // equality
@@ -10,13 +14,13 @@ pub enum FilterKind {
     Lte,
     // set
     In,
-    Nin,
+    NotIn,
     // like
     Like,
-    Nlike,
+    NLike,
     // null
     Null,
-    Nonnull,
+    NotNull,
     // between
     Between,
     NBetween,
@@ -25,52 +29,30 @@ pub enum FilterKind {
     NPrefix,
     Suffix,
     NSuffix,
-    Contains,
-    NContains,
+    Contain,
+    NContain,
     // regex
     Regex,
+    // TODO : json 추가하기
+    // json
+    // JsonpathContain,
+    // JsonpathEqual,
 }
-#[derive(Debug, Clone)]
-pub enum FilterValue<T> {
-    // equality
-    Eq(T),
-    Ne(T),
-    // comparison
-    Gt(T),
-    Lt(T),
-    Gte(T),
-    Lte(T),
-    // set
-    In(Vec<T>),
-    Nin(Vec<T>),
-    // like
-    Like(T),
-    Nlike(T),
-    // null
-    Null,
-    Nonnull,
-    // between
-    Between(T, T),
-    NBetween(T, T),
-    // string matches
-    Prefix(T),
-    NPrefix(T),
-    Suffix(T),
-    NSuffix(T),
-    Contains(T),
-    NContains(T),
-    // regex
-    Regex(T),
 
-    None,
-    NotImplemented(FilterKind),
-}
 pub trait Filter {
-    type Target;
+    type Target: FilterType;
 
     fn implemented_filters() -> Vec<FilterKind>;
 
-    fn activated_filters(&self) -> Vec<FilterKind>;
+    fn build_condition(&self, filter_kind: FilterKind, target_column: impl IntoColumnRef + Clone) -> Option<Condition>;
 
-    fn filter_value(&self, kind: FilterKind) -> FilterValue<Self::Target>;
+    fn build_all_condition(&self, target_column: impl IntoColumnRef + Clone) -> Condition {
+        let activated = Self::implemented_filters();
+        let target_column = target_column.into_column_ref();
+        let mut condition = Condition::all();
+        for kind in activated {
+            condition = condition.add_option(self.build_condition(kind, target_column.clone()));
+        }
+        condition
+    }
 }

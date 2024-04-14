@@ -1,30 +1,30 @@
+use sea_query::{Condition, IntoColumnRef, NullOrdering, Order, SimpleExpr};
 
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SorterKind {
-    Asc,
-    Desc,
-    None,
-}
-
-#[derive(Debug, Clone)]
-#[derive(Default)]
-pub enum SorterValue<T> {
-    Asc(T),
-    Desc(T),
-    #[default]
-    None,
-    NotImplemented(SorterKind),
-}
-
-
+use crate::FieldMetadata;
 
 pub trait Sorter {
     type Target;
 
-    fn implemented() -> Vec<SorterKind>;
+    fn build_order(
+        &self,
+        target_column: impl IntoColumnRef + Clone,
+    ) -> (SimpleExpr, Order, Option<NullOrdering>);
 
-    fn activated(&self) -> SorterKind;
+    fn build_equal(
+        &self,
+        value: Self::Target,
+        target_column: impl IntoColumnRef + Clone,
+    ) -> Condition;
 
-    fn to_value(&self, kind: SorterKind, value: Self::Target) -> SorterValue<Self::Target>;
+    fn build_after(
+        &self,
+        value: Self::Target,
+        target_column: impl IntoColumnRef + Clone,
+    ) -> Condition;
+
+    fn build_before(
+        &self,
+        value: Self::Target,
+        target_column: impl IntoColumnRef + Clone,
+    ) -> Condition;
 }

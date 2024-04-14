@@ -1,44 +1,26 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
+use std::borrow::Borrow;
 use std::hash::Hash;
 
-use async_graphql::Context;
 use async_trait::async_trait;
-use serde::de::DeserializeOwned;
+use sea_query::{Alias, ColumnRef, IntoIden, NullOrdering, SelectStatement, TableRef};
 
-use crate::cursor::Cursor;
+use crate::page::{Page, PageByCursor};
+use crate::types::{Config, Parameter, State, DEFAULT_CONFIG};
+use crate::{Cursor, Field, FieldGetter, FieldMetadata, TableFilter, TableSorter};
 
 #[async_trait]
-pub trait Table: Sized {
+pub trait Table: Sized + FieldMetadata + FieldGetter {
     type Id: Send + Sync + Hash + Eq + Clone + 'static;
 
-    type Filter;
+    type Filter: TableFilter<Table = Self>;
 
-    type Sorting;
+    type Sorter: TableSorter<Table = Self>;
 
-    type Cursor: DeserializeOwned;
+    type Cursor: Cursor;
 
-    fn schema() -> Cow<'static, str> {
-        Cow::Borrowed("public")
-    }
+    fn table() -> TableRef;
 
-    fn table() -> Cow<'static, str>;
+    fn id_fields() -> Vec<Self::Field>;
 
-    fn id_column() -> Cow<'static, str>;
-
-    async fn find<'a>(
-        ctx: &Context<'a>,
-        cursor: Self::Cursor,
-        filter: Self::Filter,
-        sorting: Self::Sorting,
-    ) -> HashMap<Self::Id, Self>;
-
-    fn new_cursor(
-        after: Option<String>,
-        first: Option<u32>,
-        before: Option<String>,
-        last: Option<u32>,
-    ) -> Result<Cursor<Self::Cursor>, serde_qs::Error> {
-        Cursor::<Self::Cursor>::new(after, first, before, last)
-    }
+    fn to_cursor(&self) -> Self::Cursor;
 }

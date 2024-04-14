@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 tap = { workspace = true }
 
-bootstrap = { workspace = true }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
@@ -49,6 +48,7 @@ sea-query-binder = { workspace = true }
 serde_json = { workspace = true }
 
 # internal dependencies
+bootstrap = { workspace = true }
 graph-guard = { workspace = true }
 openfga-client = { workspace = true }
 general-table = { workspace = true }

@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-graphql = { version = "7", features = [] }
+async-graphql-derive = { version = "7", features = [] }
+async-graphql-value = { version = "7", features = [] }
 
 table-traits-derive = { path = "../table-traits-derive" }
 table-traits-impl = { path = "../table-traits-impl" }
-table-traits-define = { path = "../table-traits-define" }

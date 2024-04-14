@@ -5,7 +5,22 @@ namespace: service
 
 resources:
   - resources/namespace.yaml
-  - resources/dummy.yaml
+#  - resources/dummy.yaml
+
+helmCharts:
+  - repo: https://hasura.github.io/helm-charts
+    name: graphql-engine
+    releaseName: hasura-svc
+    version: 0.5.0
+    namespace: service
+    valuesFile: values/hasura-svc.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
+
+
+secretGenerator:
+  - name: hasura-svc-secret
+    namespace: service
+    envs:
+      - ./secrets/hasura-svc-secret.env
