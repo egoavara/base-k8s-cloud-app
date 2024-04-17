@@ -1,0 +1,57 @@
+crds:
+  enabled: true
+
+windowsMonitoring:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: false
+
+kubernetesServiceMonitors:
+  enabled: false
+
+kubeApiServer:
+  enabled: false
+
+kubelet:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+coreDns:
+  enabled: false
+
+kubeDns:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false
+
+nodeExporter:
+  enabled: false
+
+prometheusOperator:
+  enabled: true
+  admissionWebhooks:
+    enabled: true
+    certManager:
+      enabled: true
+
+prometheus:
+  enabled: false
+
+thanosRuler:
+  enabled: false

@@ -1,0 +1,26 @@
+affinity: { }
+
+eck-operator-crds:
+  global:
+    createOperatorNamespace: true
+    kubeVersion: 1.21.0
+    manifestGen: false
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 150Mi
+
+telemetry:
+  disabled: false
+  distributionChannel: helm
+
+tolerations: [ ]
+
+tracing:
+  enabled: false

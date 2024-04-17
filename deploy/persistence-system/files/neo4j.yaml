@@ -1,0 +1,9 @@
+disableLookups: true
+
+neo4j:
+  name: persistence-neo4j
+  passwordFromSecret: secret-neo4j
+
+volumes:
+  data:
+    mode: "defaultStorageClass"

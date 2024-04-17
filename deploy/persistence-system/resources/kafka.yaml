@@ -1,0 +1,179 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+spec:
+  dataVolumeCapacity: 10G
+  image:
+    application: docker.io/confluentinc/cp-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  replicas: 3
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Kafka
+metadata:
+  name: kafka
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  configOverrides:
+    server:
+      - "confluent.license.topic.replication.factor=1"
+      - "confluent.metrics.reporter.topic.replicas=1"
+      - "confluent.tier.metadata.replication.factor=1"
+      - "confluent.metadata.topic.replication.factor=1"
+      - "confluent.balancer.topic.replication.factor=1"
+      - "confluent.security.event.logger.exporter.kafka.topic.replicas=1"
+      - "event.logger.exporter.kafka.topic.replicas=1"
+      - "offsets.topic.replication.factor=1"
+      - "confluent.cluster.link.enable=true"
+      - "password.encoder.secret=secret"
+
+  dataVolumeCapacity: 100Gi
+  dependencies:
+    kRaftController:
+      clusterRef:
+        name: kraftcontroller
+  metricReporter:
+    enabled: true
+#  listeners:
+#    external:
+#      externalAccess:
+#        type: nodePort
+#        nodePort:
+#          host: kafka.egoavara.net
+#          nodePortOffset: 40000
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: KsqlDB
+metadata:
+  name: ksqldb
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-ksqldb-server:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dataVolumeCapacity: 10Gi
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: ControlCenter
+metadata:
+  name: controlcenter
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-enterprise-control-center:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+
+  podTemplate:
+    annotations:
+      sidecar.istio.io/inject: "false"
+
+  configOverrides:
+    server:
+      - confluent.controlcenter.command.topic.replication=1
+      - confluent.controlcenter.replication.factor=1
+      - confluent.metrics.reporter.topic.replicas=1
+      - confluent.metrics.topic.replication=1
+      - confluent.monitoring.interceptor.topic.replication=1
+      - confluent.controlcenter.internal.topics.replication=1
+  dataVolumeCapacity: 10Gi
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.persistence.svc.cluster.local:8081
+    ksqldb:
+    - name: ksqldb
+      url: http://ksqldb.persistence.svc:8088
+    connect:
+    - name: connect-debezium-postgres
+      url: http://connect-debezium-postgres.persistence.svc:8083
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: SchemaRegistry
+metadata:
+  name: schemaregistry
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-schema-registry:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaRestProxy
+metadata:
+  name: kafkarestproxy
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-kafka-rest:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.persistence.svc.cluster.local:8081
+
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Connect
+metadata:
+  name: connect-debezium-postgres
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-server-connect:7.5.0
+    # application: idock.daumkakao.io/kane-woz/cp-connect-debezium-postgres:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+
+  podTemplate:
+    annotations:
+      sidecar.istio.io/inject: "false"
+
+  configOverrides:
+    server:
+      - config.storage.replication.factor=1
+      - offset.storage.replication.factor=1
+      - status.storage.replication.factor=1
+  build:
+    type: onDemand
+    onDemand:
+      plugins:
+        locationType: confluentHub
+        confluentHub:
+          - name: debezium-connector-postgresql
+            owner: debezium
+            version: 2.2.1
+  dependencies:
+    kafka:
+      bootstrapEndpoint: kafka:9071
+  mountedSecrets:
+    - secretRef: secret-kafka-connect # mount to /mnt/secrets/secret-kafka-connect
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: Connector
+metadata:
+  name: debezium-connector-postgresql
+spec:
+  class: io.debezium.connector.postgresql.PostgresConnector
+  taskMax: 1
+  connectClusterRef:
+    name: connect-debezium-postgres
+  configs:
+    topic.prefix: debezium-connector-postgresql
+    topic.creation.default.replication.factor: "1"
+    topic.creation.default.partitions: "1"
+    auto.create.topics.enable: 'true'
+
+    database.hostname: "postgres-svc.persistence.svc"
+    database.port: "5432"
+    database.user: "${file:/mnt/secrets/secret-kafka-connect/secret-kafka-connect.env:postgres-svc-username}"
+    database.password: "${file:/mnt/secrets/secret-kafka-connect/secret-kafka-connect.env:postgres-svc-password}"
+    database.dbname: "svc"
+
+    plugin.name: "pgoutput"
+    snapshot.mode: "initial"
+
+    key.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    key.converter.schemas.enable: "false"
+    value.converter.schemas.enable: "false"

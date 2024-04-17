@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/general-table", "lib/general-table-derive", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-impl", "lib/gql-impl-sqlx", "lib/gql-impl", "lib/gql-impl-derive", "lib/gql-impl-macro", "lib/gql-impl-loader", "lib/gql-impl-loader-sqlx",
+    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-impl", "lib/gql-impl", "lib/gql-impl-derive", "lib/gql-impl-macro", "lib/gql-impl-loader", "lib/gql-impl-loader-sqlx",
 ]
 resolver = "2"
 
@@ -96,5 +96,4 @@ thiserror = { version = "1", features = [] }
 bootstrap = { path = "lib/bootstrap" }
 graph-guard = { path = "lib/graph-guard" }
 openfga-client = { path = "lib/openfga-client" }
-general-table = { path = "lib/general-table" }
 table-traits = { path = "lib/table-traits" }

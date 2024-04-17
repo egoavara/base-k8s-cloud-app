@@ -51,5 +51,4 @@ serde_json = { workspace = true }
 bootstrap = { workspace = true }
 graph-guard = { workspace = true }
 openfga-client = { workspace = true }
-general-table = { workspace = true }
 uuid = { version = "1.6.1", features = ["v4"] }

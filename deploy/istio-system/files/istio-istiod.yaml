@@ -1,0 +1,18 @@
+global: {}
+
+meshConfig:
+  defaultConfig:
+    tracing: {}
+
+  defaultProviders:
+    tracing:
+      - opentelemetry
+
+  extensionProviders:
+    - name: "opentelemetry"
+      opentelemetry:
+        service: "jaeger-collector.telemetry.svc.cluster.local"
+        port: 4317
+
+  enablePrometheusMerge: true
+  trustDomain: cluster.local
