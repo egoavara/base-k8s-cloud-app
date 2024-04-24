@@ -1,24 +1,24 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
 
-use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql::dataloader::DataLoader;
-use async_graphql::http::{ALL_WEBSOCKET_PROTOCOLS, GraphiQLSource};
+use async_graphql::http::{GraphiQLSource, ALL_WEBSOCKET_PROTOCOLS};
 use async_graphql::Schema;
+use async_graphql::{EmptyMutation, EmptySubscription};
 use async_graphql_axum::{GraphQLProtocol, GraphQLRequest, GraphQLResponse, GraphQLWebSocket};
-use axum::{response, Router};
 use axum::extract::{MatchedPath, Request, State, WebSocketUpgrade};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
+use axum::{response, Router};
 use axum_client_ip::{InsecureClientIp, SecureClientIpSource};
-use axum_extra::headers::Authorization;
 use axum_extra::headers::authorization::Basic;
+use axum_extra::headers::Authorization;
 use axum_extra::TypedHeader;
 use opentelemetry::global;
 use sqlx::PgPool;
 use tower_http::trace::TraceLayer;
-use tracing::{info, info_span, instrument, Instrument, span};
+use tracing::{info, info_span, instrument, span, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::schema::{EntrySchema, Query};

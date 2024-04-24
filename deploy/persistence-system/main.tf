@@ -31,7 +31,7 @@ resource "helm_release" "postgresql" {
         server = "${kubernetes_service.openldap.metadata[0].name}.${kubernetes_service.openldap.metadata[0].namespace}.svc.cluster.local"
         port   = 389
         basedn = local.openldap_root_dn
-        binddn = "cn=${local.postgres-username},${local.openldap_root_dn}"
+        binddn = "cn=${local.openldap_admin_username},${local.openldap_root_dn}"
         bindpw = "auto"
       },
       primary = {
@@ -47,7 +47,6 @@ resource "helm_release" "postgresql" {
     }),
   ]
 }
-
 
 resource "helm_release" "etcd" {
   depends_on = [kubernetes_namespace.persistence-system]
@@ -73,29 +72,55 @@ resource "helm_release" "etcd" {
   ]
 }
 
-# postgres for svc
-#- repo: https://charts.bitnami.com/bitnami
-#name: postgresql
-#namespace: persistence
-#releaseName: postgres-svc
-#version: 13.2.3
-#valuesFile: ./values/postgres-svc.yaml
-## etcd for dex
-#- repo: https://charts.bitnami.com/bitnami
-#name: etcd
-#namespace: persistence
-#releaseName: etcd-dex
-#version: 9.8.0
-#valuesFile: ./values/etcd-dex.yaml
-## redis (key-value store)
-#  - releaseName: redis
-#    repo: https://charts.bitnami.com/bitnami
-#    name: redis
-#    version: 18.3.0
-#    valuesFile: ./values/redis.yaml
-# neo4j (graph database)
-#  - releaseName: neo4j
-#    repo: https://helm.neo4j.com/neo4j
-#    name: neo4j
-#    version: 5.14.0
-#    valuesFile: ./values/neo4j.yaml
+resource "helm_release" "redis" {
+  depends_on = [kubernetes_namespace.persistence-system]
+
+  repository = "https://charts.bitnami.com/bitnami"
+  chart      = "redis-cluster"
+  name       = "redis"
+  version    = "10.0.2"
+
+  namespace        = kubernetes_namespace.persistence-system.metadata[0].name
+  create_namespace = false
+  values           = [
+    yamlencode({
+      cluster = {
+        nodes    = 6
+        replicas = 1
+      }
+      usePassword     = true
+      usePasswordFile = true
+      existingSecret  = kubernetes_secret.redis.metadata[0].name
+
+      metrics = {
+        enabled = true
+      }
+    })
+  ]
+}
+
+resource "helm_release" "neo4j" {
+  depends_on = [kubernetes_namespace.persistence-system]
+
+  repository = "https://helm.neo4j.com/neo4j"
+  chart      = "neo4j"
+  name       = "neo4j"
+  version    = "5.14.0"
+
+  namespace        = kubernetes_namespace.persistence-system.metadata[0].name
+  create_namespace = false
+  values           = [
+    yamlencode({
+      disableLookups = true
+      neo4j          = {
+        name               = "neo4j"
+        passwordFromSecret = "neo4j"
+      }
+      volumes = {
+        data = {
+          mode = "defaultStorageClass"
+        }
+      }
+    })
+  ]
+}

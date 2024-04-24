@@ -1,5 +1,0 @@
-rbac:
-  create: true
-  clusterRole: true
-image:
-  tag: 1.52.0

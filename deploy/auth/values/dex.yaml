@@ -1,6 +1,0 @@
-
-replicaCount: 1
-
-configSecret:
-  create: false
-  name: dex-config

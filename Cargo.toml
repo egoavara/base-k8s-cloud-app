@@ -1,6 +1,21 @@
 [workspace]
 members = [
-    "app/graph-hmb", "app/event-hmb", "lib/graph-guard", "lib/bootstrap", "lib/openfga-client", "lib/table-traits", "lib/table-traits-derive", "lib/table-traits-core", "lib/table-traits-impl", "lib/gql-impl", "lib/gql-impl-derive", "lib/gql-impl-macro", "lib/gql-impl-loader", "lib/gql-impl-loader-sqlx",
+    "app/graph-hmb",
+    "app/event-otype",
+    "app/event-hmb",
+    "app/run-otype",
+    "lib/graph-guard",
+    "lib/bootstrap",
+    "lib/openfga-client",
+    "lib/table-traits",
+    "lib/table-traits-derive",
+    "lib/table-traits-core",
+    "lib/table-traits-impl",
+    "lib/gql-impl",
+    "lib/gql-impl-derive",
+    "lib/gql-impl-macro",
+    "lib/gql-impl-loader",
+    "lib/gql-impl-loader-sqlx",
 ]
 resolver = "2"
 
@@ -11,45 +26,44 @@ normal = ["ahash"]
 
 tap = { version = "1.0.1" }
 
+hyper = { version = "1.3.1" }
 
 http = { version = "1", features = [] }
 tokio = { version = "1", features = ["full"] }
 futures = { version = "0.3.30", features = [] }
 
-reqwest = { version = "0.11.23", default-features = false, features = ["json", "rustls-tls", "gzip"] }
+reqwest = { version = "0.12.4", default-features = false, features = ["json", "rustls-tls", "gzip"] }
 
 rdkafka = { version = "0.36.0", features = ["cmake-build"] }
 
 serde = { version = "1", features = [] }
 serde_json = { version = "1", features = [] }
-serde_qs = { version = "0.12.0", features = [] }
-
-base64 = { version = "0.21.7", features = [] }
+serde_qs = { version = "0.13.0", features = [] }
 
 regex = { version = "1", features = [] }
 
-opentelemetry = { version = "0.21.0", features = ["trace", "logs", "metrics"] }
-opentelemetry_sdk = { version = "0.21.0", features = ["trace", "logs", "metrics", "rt-tokio"] }
-opentelemetry-stdout = { version = "0.2.0", features = ["logs", "trace", "metrics"] }
-opentelemetry-otlp = { version = "0.14.0", features = ["serialize", "trace", "logs", "http-proto", "reqwest-rustls", "metrics"] }
-opentelemetry-http = { version = "0.10.0", features = [] }
+opentelemetry = { version = "0.22.0", features = ["trace", "logs", "metrics"] }
+opentelemetry_sdk = { version = "0.22.0", features = ["trace", "logs", "metrics", "rt-tokio"] }
+opentelemetry-stdout = { version = "0.3.0", features = ["logs", "trace", "metrics"] }
+opentelemetry-otlp = { version = "0.15.0", features = ["serialize", "trace", "logs", "http-proto", "reqwest-rustls", "metrics"] }
+opentelemetry-http = { version = "0.11.1", features = [] }
 
 tracing = { version = "0.1" }
 tracing-appender = { version = "0.2" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tracing-opentelemetry = { version = "0.22.0", features = [] }
+tracing-opentelemetry = { version = "0.23.0", features = [] }
 
 tempfile = { version = "3" }
 
 axum = { version = "0.7.3", features = ["ws", "tracing"] }
 axum-extra = { version = "0.9.1", features = ["typed-header"] }
-axum-valid = { version = "0.14.0", default-features = false, features = ["garde"] }
-axum-client-ip = { version = "0.5.0", features = [] }
+axum-valid = { version = "0.18.0", default-features = false, features = ["garde"] }
+axum-client-ip = { version = "0.6.0", features = [] }
 
 tower = { version = "0.4.13", features = [] }
 tower-http = { version = "0.5.0", features = ["trace"] }
 
-garde = { version = "0.17.0" }
+garde = { version = "0.18.0" }
 
 uuid = { version = "1.8.0", features = ["v4"] }
 
@@ -86,14 +100,18 @@ sea-query-binder = { version = "0.5.0", features = [
 
 task-local-extensions = { version = "0.1.4" }
 
-tonic = { version = "0.10.2", features = [] }
+tonic = { version = "0.11.0", features = [] }
 
 itertools = { version = "0.12.1" }
 
 anyhow = { version = "1", features = [] }
 thiserror = { version = "1", features = [] }
 
+
+
+
 bootstrap = { path = "lib/bootstrap" }
 graph-guard = { path = "lib/graph-guard" }
 openfga-client = { path = "lib/openfga-client" }
 table-traits = { path = "lib/table-traits" }
+

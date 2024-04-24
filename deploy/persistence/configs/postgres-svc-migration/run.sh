@@ -1,1 +1,0 @@
-psql -h postgres-svc.persistence.svc -U pg-svc -d svc -f /var/configs/migration/migration.sql
