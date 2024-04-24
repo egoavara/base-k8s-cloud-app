@@ -1,0 +1,38 @@
+[package]
+name = "gql-impl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = { version = "0.1" }
+derivative = { version = "2" }
+serde = { version = "1" }
+serde_json = { version = "1" }
+postcard = { version = "1", features = ["alloc"] }
+data-encoding = { version = "2", features = [] }
+thiserror = { version = "1" }
+time = { version = "0.3", features = ["macros", "serde"] }
+uuid = { version = "1" }
+
+
+[dependencies.sea-query]
+version = "0"
+default-features = false
+features = ["derive", "backend-postgres"]
+
+[dependencies.async-graphql]
+version = "7"
+optional = true
+
+[dependencies.gql-impl-derive]
+path = "../gql-impl-derive"
+optional = true
+
+[features]
+default = ["derive"]
+derive = ["gql-impl-derive"]
+graphql = ["async-graphql"]
+with-uuid = ["sea-query/with-uuid", "async-graphql/uuid"]
+with-time = []

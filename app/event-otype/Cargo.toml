@@ -1,0 +1,17 @@
+[package]
+name = "event-otype"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7.10" }
+futures = { version = "0.3.30" }
+time = { version = "0.3.36", features = ["formatting"] }
+
+temporal-sdk-core = { git = "https://github.com/temporalio/sdk-core", rev = "8efbd22bf997ed846e34e4efd20c06e2dac4c956" }
+temporal-client = { git = "https://github.com/temporalio/sdk-core", rev = "8efbd22bf997ed846e34e4efd20c06e2dac4c956" }
+temporal-sdk = { git = "https://github.com/temporalio/sdk-core", rev = "8efbd22bf997ed846e34e4efd20c06e2dac4c956" }
