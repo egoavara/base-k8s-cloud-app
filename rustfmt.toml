@@ -1,1 +1,56 @@
-max_width=255
+max_width = 255
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#condense_wildcard_suffixes
+condense_wildcard_suffixes = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#enum_discrim_align_threshold
+enum_discrim_align_threshold = 30
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#fn_single_line
+fn_single_line = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#hex_literal_case
+hex_literal_case = "Upper"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#imports_indent
+imports_indent = "Visual"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#imports_layout
+imports_layout = "HorizontalVertical"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#indent_style
+indent_style = "Visual"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#inline_attribute_width
+inline_attribute_width = 60
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#match_arm_leading_pipes
+match_arm_leading_pipes = "Always"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#imports_granularity
+imports_granularity = "Module"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#normalize_comments
+normalize_comments = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#overflow_delimited_expr
+overflow_delimited_expr = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#reorder_impl_items
+reorder_impl_items = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#reorder_imports
+reorder_imports = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#reorder_modules
+reorder_modules = true
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#group_imports
+group_imports = "StdExternalCrate"
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#struct_field_align_threshold
+struct_field_align_threshold = 30
+
+# https://rust-lang.github.io/rustfmt/?version=v1.6.0&search=#use_field_init_shorthand
+use_field_init_shorthand = true
+

@@ -15,7 +15,7 @@ members = [
     "lib/gql-impl-derive",
     "lib/gql-impl-macro",
     "lib/gql-impl-loader",
-    "lib/gql-impl-loader-sqlx",
+    "lib/gql-impl-loader-sqlx", "event/notify", "event/rest-notify",
 ]
 resolver = "2"
 
