@@ -67,7 +67,7 @@ async fn main() {
                 .host("postgresql-hl.persistence-system.svc")
                 .port(5432)
                 .username("postgres-user")
-                .password("911jnyyWPc7ZdEjsO5JpfP6GBb-PFslsMwbUCUDD8j7EUxYifZVm3l7MXVjOoQlF")
+                .password("oOzTsQzjhP0acblx52hVauwskH6YnZKWxMOhKnvDe09quROIwGP1z4FReDDzNfNT")
                 .database("public"),
         )
         .await
